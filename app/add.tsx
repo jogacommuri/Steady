@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DateField } from '@/components/DateField';
@@ -75,10 +75,17 @@ export default function AddScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      behavior={Platform.OS === 'android' ? 'height' : undefined}
+    >
       <DetailHeader title="Log entry" backLabel="Cancel" onBack={() => router.back()} />
       <SegmentedRow options={KINDS} value={kind} onChange={setKind} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}>
+      <ScrollView
+        contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      >
         <View style={{ marginBottom: spacing.lg }}>
           <DateField value={date} onChange={setDate} />
         </View>
@@ -144,6 +151,6 @@ export default function AddScreen() {
           </EntryForm>
         ) : null}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DetailHeader } from '@/components/DetailHeader';
@@ -170,9 +170,16 @@ export default function AccountScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      behavior={Platform.OS === 'android' ? 'height' : undefined}
+    >
       <DetailHeader title="Account & sync" onBack={() => router.back()} />
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      >
         {busy ? (
           <View style={{ paddingTop: spacing.md, alignItems: 'flex-start', paddingHorizontal: spacing.lg }}>
             <ActivityIndicator color={theme.colors.accent} />
@@ -186,7 +193,7 @@ export default function AccountScreen() {
         ) : null}
         {body()}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -14,7 +14,10 @@ export function DateField({ value, onChange }: { value: string; onChange: (date:
   const label = value === today() ? 'Today' : formatDay(value);
 
   const handleChange = (event: DateTimePickerEvent, selected?: Date) => {
-    if (Platform.OS === 'android') setOpen(false);
+    // Close on any pick (not just Android's dialog) — the iOS inline calendar
+    // otherwise stays expanded, burying whatever's below it (and, combined
+    // with the keyboard, the field you're trying to type into).
+    setOpen(false);
     if (event.type === 'dismissed') return;
     if (selected) onChange(isoDate(selected));
   };
