@@ -84,6 +84,26 @@ npm start
 The app signs in anonymously and starts syncing automatically. Add a meal on one
 device, and it should appear in the Supabase **Table Editor → meals**.
 
+## 6. (Optional) Calorie estimation via Claude
+
+Powers the "Estimate calories automatically" toggle on the Goals screen. Needs
+the [Supabase CLI](https://supabase.com/docs/guides/cli) installed and an
+[Anthropic API key](https://console.anthropic.com/settings/keys). The key is
+a **Supabase secret**, not an app env var — it never ships in the app bundle.
+
+```bash
+supabase login
+supabase link --project-ref YOUR-PROJECT-REF   # the ref is in your project URL
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+supabase functions deploy estimate-calories
+```
+
+That's it — no client-side config. The Goals toggle checks that Supabase itself
+is configured (same `.env` values as above); it doesn't know whether the
+function is actually deployed, so a misconfigured deploy shows up as a
+specific error in the Meals tab's "Estimate now" toast rather than the toggle
+staying greyed out.
+
 ---
 
 ## Using it across two devices

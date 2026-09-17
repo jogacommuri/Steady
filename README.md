@@ -25,19 +25,26 @@ The full plan lives in [`docs/architecture.md`](docs/architecture.md).
   **Goals** (target weight / workouts / minutes / meals, stored locally —
   see `hooks/useGoals.ts`), and **Progress** (streak, consistency, 35-day
   grid). Log entry moved out of the tracker tabs into its own screen
-  (`app/add.tsx`), opened from the tab bar's "+" or Today's quick-add row.
+  (`app/add.tsx`), opened from the tab bar's "+" (the single entry point —
+  an earlier Today-only quick-add row that did the same thing was removed).
   **Known trim:** Goals are device-local only (no Supabase table yet) —
   unlike meals/weights/workouts they don't sync across devices.
 - ✅ **Phase 5 — Calorie estimation (opt-in):** meals carry an optional
   `calories` field. Type one in yourself, or turn on "Estimate calories
-  automatically" on the Goals screen to have it filled in the background via
-  [API Ninjas' Nutrition API](https://api-ninjas.com/api/nutrition) whenever
-  an entry has none — never blocks the save, and a local cache
-  (`calorie_cache`) avoids repeat lookups for the same text. Off by default;
-  needs `EXPO_PUBLIC_NUTRITION_API_KEY` set to turn on. The Meals tab shows a
-  daily-average headline plus a per-meal-type breakdown, both excluding
-  entries with no known calories rather than treating them as 0. See
-  `lib/nutrition.ts`, `lib/calorieEnrichment.ts`.
+  automatically" on the Goals screen to have it filled in the background —
+  never blocks the save — via a Supabase Edge Function
+  (`supabase/functions/estimate-calories`) that proxies to Claude Haiku 4.5;
+  the Anthropic key is a Supabase secret, never shipped in the app. A local
+  cache (`calorie_cache`) avoids repeat lookups for the same text. Off by
+  default; see [Supabase setup, step 6](docs/supabase-setup.md) to turn it
+  on. The Meals tab shows a daily-average headline plus a per-meal-type
+  breakdown, both excluding entries with no known calories rather than
+  treating them as 0, plus a manual "Estimate now" backfill for meals logged
+  before this was set up. See `lib/nutrition.ts`, `lib/calorieEnrichment.ts`,
+  `supabase/functions/estimate-calories/index.ts`.
+  **Also tried and rejected:** API Ninjas' free tier gates the `calories`
+  field itself behind a paid plan; a structured food-database API
+  (calorieapi.com) needs precise gram quantities the app never collects.
 
 ## Getting started
 

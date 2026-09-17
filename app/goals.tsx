@@ -80,8 +80,8 @@ export default function GoalsScreen() {
           <Text style={[weight('semibold'), styles.toggleLabel]}>Estimate calories automatically</Text>
           <Text style={[weight('medium'), styles.toggleHint]}>
             {isNutritionApiConfigured
-              ? "When you log a meal with no calories entered, its text is sent to a nutrition API (api-ninjas.com) to estimate one. Type a value yourself on any entry to skip that lookup."
-              : 'Needs EXPO_PUBLIC_NUTRITION_API_KEY set (see .env.example) before this can turn on.'}
+              ? 'When you log a meal with no calories entered, its text is sent to Claude (via a Supabase function — no key in the app) to estimate one. Type a value yourself on any entry to skip that lookup.'
+              : 'Needs Supabase configured, with the estimate-calories function deployed (see docs/supabase-setup.md), before this can turn on.'}
           </Text>
           <View style={{ marginTop: spacing.md }}>
             <OnOffToggle
