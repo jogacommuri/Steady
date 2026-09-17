@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/AppHeader';
 import { LogList } from '@/components/LogList';
-import { GoalBar, Kicker, Rule, StatCell } from '@/components/ui';
+import { GoalBar, Kicker, Rule } from '@/components/ui';
 import { useGoals } from '@/hooks/useGoals';
 import { useMeals } from '@/hooks/useMeals';
 import { useWeights } from '@/hooks/useWeights';
@@ -28,14 +28,12 @@ export default function TodayScreen() {
 
   const stats = useMemo(() => {
     const mealsToday = meals.filter((m) => m.date === todayStr);
-    const workoutsToday = workouts.filter((w) => w.date === todayStr);
-    const weightToday = weights.find((w) => w.date === todayStr);
     const latestWeight = weights[0]?.value;
     const minutes = weekMinutes(workouts, todayStr);
     const sessions = weekWorkoutCount(workouts, todayStr);
-    const activeToday = workoutsToday.reduce((sum, w) => sum + w.duration, 0);
     const log = buildDayLog(todayStr, meals, weights, workouts, goals.weightUnit);
 
+    const mealsPct = goals.mealsPerDay > 0 ? Math.min(100, Math.round((mealsToday.length / goals.mealsPerDay) * 100)) : 0;
     const weightPct =
       latestWeight == null
         ? 0
@@ -45,12 +43,11 @@ export default function TodayScreen() {
 
     return {
       mealsToday,
-      weightToday,
       latestWeight,
       minutes,
       sessions,
-      activeToday,
       log,
+      mealsPct,
       weightPct,
       workoutPct,
       minutesPct,
@@ -67,48 +64,36 @@ export default function TodayScreen() {
         </View>
         <Rule />
 
-        <View style={styles.statsRow}>
-          <StatCell
-            kicker="Meals"
-            value={stats.mealsToday.length}
-            meta={`of ${goals.mealsPerDay} today`}
-            onPress={() => router.push('/meals')}
-          />
-          <StatCell
-            kicker="Weight"
-            value={stats.weightToday ? formatWeight(stats.weightToday.value, goals.weightUnit) : '—'}
-            meta={stats.weightToday ? goals.weightUnit : 'not logged'}
-            onPress={() => router.push('/weight')}
-          />
-          <StatCell
-            kicker="Active"
-            value={stats.activeToday}
-            meta="min today"
-            onPress={() => router.push('/workouts')}
-          />
-        </View>
-        <Rule />
-
         <View style={styles.goalsSection}>
           <Kicker size={10}>Goals</Kicker>
           <View style={styles.goalsList}>
+            <GoalBar
+              label="Meals today"
+              readout={`${stats.mealsToday.length} of ${goals.mealsPerDay}`}
+              pct={stats.mealsPct}
+              fill={theme.colors.text}
+              onPress={() => router.push('/meals')}
+            />
             <GoalBar
               label="Weight to target"
               readout={`${formatWeight(stats.latestWeight ?? goals.targetWeight, goals.weightUnit)} → ${formatWeight(goals.targetWeight, goals.weightUnit)} ${goals.weightUnit}`}
               pct={stats.weightPct}
               fill={theme.colors.text}
+              onPress={() => router.push('/weight')}
             />
             <GoalBar
               label="Workouts this week"
               readout={`${stats.sessions} of ${goals.workoutsPerWeek}`}
               pct={stats.workoutPct}
               fill={theme.colors.text}
+              onPress={() => router.push('/workouts')}
             />
             <GoalBar
-              label="Active minutes"
+              label="Active minutes this week"
               readout={`${stats.minutes} of ${goals.minutesPerWeek}`}
               pct={stats.minutesPct}
               fill={theme.colors.accent}
+              onPress={() => router.push('/workouts')}
             />
           </View>
         </View>
@@ -164,7 +149,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   titleBlock: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md },
   title: { fontSize: 40, letterSpacing: -1.2, textTransform: 'uppercase', color: theme.colors.text, marginTop: spacing.xs },
-  statsRow: { flexDirection: 'row' },
   goalsSection: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg, gap: spacing.md },
   goalsList: { gap: 14 },
   logHeader: {

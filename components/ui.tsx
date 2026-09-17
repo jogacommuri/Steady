@@ -115,44 +115,23 @@ export function SecondaryButton({
   );
 }
 
-/** The 3-up (or N-up) stat cell used on Today: kicker, big value, meta. Always left-ruled. */
-export function StatCell({
-  kicker,
-  value,
-  meta,
-  onPress,
-}: {
-  kicker: string;
-  value: string | number;
-  meta?: string;
-  onPress?: () => void;
-}) {
-  const Wrapper = onPress ? Pressable : View;
-  return (
-    <Wrapper style={styles.statCell} onPress={onPress}>
-      <Kicker size={9.5}>{kicker}</Kicker>
-      <Text style={[weight('bold'), styles.statValue]}>{value}</Text>
-      {meta ? (
-        <Text style={[weight('medium'), styles.statMeta]}>{meta}</Text>
-      ) : null}
-    </Wrapper>
-  );
-}
-
-/** A labelled progress bar — Goals row on Today, and the Goals screen readouts. */
+/** A labelled progress bar — Today's Goals rows, doubling as each metric's "current reading" (no separate stat cell). */
 export function GoalBar({
   label,
   readout,
   pct,
   fill = theme.colors.text,
+  onPress,
 }: {
   label: string;
   readout: string;
   pct: number;
   fill?: string;
+  onPress?: () => void;
 }) {
+  const Wrapper = onPress ? Pressable : View;
   return (
-    <View style={{ gap: spacing.xs + 3 }}>
+    <Wrapper style={{ gap: spacing.xs + 3 }} onPress={onPress}>
       <View style={styles.goalHeader}>
         <Text style={[weight('semibold'), styles.goalLabel]}>{label}</Text>
         <Text style={[weight('medium'), styles.goalReadout]}>{readout}</Text>
@@ -160,7 +139,7 @@ export function GoalBar({
       <View style={styles.goalTrack}>
         <View style={[styles.goalFill, { width: `${Math.max(0, Math.min(100, pct))}%`, backgroundColor: fill }]} />
       </View>
-    </View>
+    </Wrapper>
   );
 }
 
@@ -282,15 +261,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
-  statCell: {
-    flex: 1,
-    borderLeftWidth: 2,
-    borderLeftColor: theme.colors.border,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-  },
-  statValue: { fontSize: 30, letterSpacing: -0.9, color: theme.colors.text, marginTop: 10 },
-  statMeta: { fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase', color: theme.colors.textFaint, marginTop: 6 },
   goalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   goalLabel: { fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase', color: theme.colors.text },
   goalReadout: { fontSize: 12, color: theme.colors.textMuted },
