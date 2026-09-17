@@ -1,0 +1,59 @@
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { SQLiteProvider } from 'expo-sqlite';
+import { Suspense } from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { SyncProvider } from '@/components/SyncProvider';
+import { DATABASE_NAME, migrate } from '@/lib/db';
+import { useTheme } from '@/theme/useTheme';
+
+function Loading() {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.background,
+      }}
+    >
+      <ActivityIndicator color={colors.sage} />
+    </View>
+  );
+}
+
+export default function RootLayout() {
+  const { dark, colors } = useTheme();
+  return (
+    <SafeAreaProvider>
+      <Suspense fallback={<Loading />}>
+        <SQLiteProvider
+          databaseName={DATABASE_NAME}
+          onInit={migrate}
+          useSuspense
+        >
+          <StatusBar style={dark ? 'light' : 'dark'} />
+          <SyncProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen
+                name="account"
+                options={{
+                  presentation: 'modal',
+                  headerShown: true,
+                  title: 'Account & Sync',
+                  headerStyle: { backgroundColor: colors.background },
+                  headerTitleStyle: { color: colors.text },
+                  headerTintColor: colors.plum,
+                }}
+              />
+            </Stack>
+          </SyncProvider>
+        </SQLiteProvider>
+      </Suspense>
+    </SafeAreaProvider>
+  );
+}

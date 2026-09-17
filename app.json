@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Steady",
+    "slug": "steady",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "steady",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.steady.app"
+    },
+    "android": {
+      "package": "com.steady.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
