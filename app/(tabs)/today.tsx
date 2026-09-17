@@ -117,12 +117,6 @@ export default function TodayScreen() {
             </View>
           )}
         </View>
-
-        <View style={styles.quickAddWrap}>
-          <QuickAddButton label="Meal" accent onPress={() => router.push({ pathname: '/add', params: { kind: 'meal' } })} />
-          <QuickAddButton label="Weight" onPress={() => router.push({ pathname: '/add', params: { kind: 'weight' } })} />
-          <QuickAddButton label="Workout" onPress={() => router.push({ pathname: '/add', params: { kind: 'workout' } })} />
-        </View>
       </ScrollView>
     </View>
   );
@@ -130,19 +124,6 @@ export default function TodayScreen() {
 
 function RuleTop() {
   return <View style={{ height: 1, backgroundColor: theme.colors.borderLight }} />;
-}
-
-function QuickAddButton({ label, accent, onPress }: { label: string; accent?: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.quickAddBtn, { backgroundColor: accent ? theme.colors.accent : 'transparent' }]}
-    >
-      <Text style={[weight('semibold'), styles.quickAddLabel, { color: accent ? '#fff' : theme.colors.text }]}>
-        + {label}
-      </Text>
-    </Pressable>
-  );
 }
 
 const styles = StyleSheet.create({
@@ -160,9 +141,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   link: { fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: theme.colors.accentText },
-  logBody: { paddingHorizontal: spacing.lg },
+  logBody: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
   emptyLog: { fontSize: 13, lineHeight: 19, color: theme.colors.textMuted, paddingVertical: 22 },
-  quickAddWrap: { flexDirection: 'row', borderTopWidth: 2, borderTopColor: theme.colors.border, marginTop: spacing.lg },
-  quickAddBtn: { flex: 1, borderLeftWidth: 2, borderLeftColor: theme.colors.border, minHeight: 56, padding: 14, justifyContent: 'center' },
-  quickAddLabel: { fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' },
 });
