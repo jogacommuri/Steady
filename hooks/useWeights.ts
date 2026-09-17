@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { nowIso } from '@/lib/dates';
+import { syncBus } from '@/lib/syncBus';
 import type { Weight } from '@/lib/types';
 import { uuid } from '@/lib/uuid';
 
@@ -36,7 +37,9 @@ export function useWeights() {
 
   const refresh = useCallback(async () => {
     const rows = await db.getAllAsync<WeightRow>(
-      'SELECT * FROM weights ORDER BY date DESC, created_at DESC'
+      `SELECT * FROM weights
+       WHERE deleted_at IS NULL
+       ORDER BY date DESC, created_at DESC`
     );
     setWeights(rows.map(toWeight));
     setLoading(false);
@@ -44,6 +47,7 @@ export function useWeights() {
 
   useEffect(() => {
     refresh();
+    return syncBus.onRemoteChange(refresh);
   }, [refresh]);
 
   const addWeight = useCallback(
@@ -54,6 +58,7 @@ export function useWeights() {
          VALUES (?, ?, ?, ?, ?, ?)`,
         [uuid(), input.date, input.value, input.note.trim(), ts, ts]
       );
+      syncBus.emitLocalChange();
       await refresh();
     },
     [db, refresh]
@@ -61,7 +66,12 @@ export function useWeights() {
 
   const removeWeight = useCallback(
     async (id: string) => {
-      await db.runAsync('DELETE FROM weights WHERE id = ?', [id]);
+      const ts = nowIso();
+      await db.runAsync(
+        'UPDATE weights SET deleted_at = ?, updated_at = ?, pending_sync = 1 WHERE id = ?',
+        [ts, ts, id]
+      );
+      syncBus.emitLocalChange();
       await refresh();
     },
     [db, refresh]

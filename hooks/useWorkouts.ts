@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { nowIso } from '@/lib/dates';
+import { syncBus } from '@/lib/syncBus';
 import type { Workout, WorkoutType } from '@/lib/types';
 import { uuid } from '@/lib/uuid';
 
@@ -39,7 +40,9 @@ export function useWorkouts() {
 
   const refresh = useCallback(async () => {
     const rows = await db.getAllAsync<WorkoutRow>(
-      'SELECT * FROM workouts ORDER BY date DESC, created_at DESC'
+      `SELECT * FROM workouts
+       WHERE deleted_at IS NULL
+       ORDER BY date DESC, created_at DESC`
     );
     setWorkouts(rows.map(toWorkout));
     setLoading(false);
@@ -47,6 +50,7 @@ export function useWorkouts() {
 
   useEffect(() => {
     refresh();
+    return syncBus.onRemoteChange(refresh);
   }, [refresh]);
 
   const addWorkout = useCallback(
@@ -65,6 +69,7 @@ export function useWorkouts() {
           ts,
         ]
       );
+      syncBus.emitLocalChange();
       await refresh();
     },
     [db, refresh]
@@ -72,7 +77,12 @@ export function useWorkouts() {
 
   const removeWorkout = useCallback(
     async (id: string) => {
-      await db.runAsync('DELETE FROM workouts WHERE id = ?', [id]);
+      const ts = nowIso();
+      await db.runAsync(
+        'UPDATE workouts SET deleted_at = ?, updated_at = ?, pending_sync = 1 WHERE id = ?',
+        [ts, ts, id]
+      );
+      syncBus.emitLocalChange();
       await refresh();
     },
     [db, refresh]

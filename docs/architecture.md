@@ -82,8 +82,11 @@ lib/
   db.ts               SQLite setup + migrations
   types.ts            row shapes
   dates.ts, uuid.ts   helpers
-  sync.ts             Supabase push/pull  (Phase 3)
-  supabase.ts         client config       (Phase 3)
+  supabase.ts         client config + auth
+  sync.ts             push/pull + realtime engine (LWW)
+  syncBus.ts          event bus decoupling hooks ↔ engine
+supabase/
+  schema.sql          tables + RLS + realtime (run once)
 theme/
   colors.ts           sage/clay/plum/gold tokens, light + dark
   useTheme.ts
@@ -95,9 +98,37 @@ theme/
 | --- | --- | --- |
 | 1. Scaffold | Expo app, tab navigation, static UI ported from the artifact | ✅ done |
 | 2. Local-only | SQLite CRUD for meals/weights/workouts; fully usable offline | ✅ done |
-| 3. Backend | Supabase project, auth, push/pull sync | ⬜ next |
+| 3. Backend | Supabase project, anonymous auth, push/pull + realtime sync | ✅ done |
 | 4. Polish | Weight trend chart, delta indicators, empty states, dark mode | 🔶 partial (deltas, empty states, dark mode done) |
 | 5. Ship | EAS Build, TestFlight/internal track, then store submission | ⬜ |
+
+### Phase 3 — how sync works
+
+- **Config:** `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+  (see `.env.example`). Unset → the app runs exactly as Phase 2, local-only.
+- **Schema:** run `supabase/schema.sql` once against a new Supabase project.
+  It creates the three tables, owner-only row-level security, and adds them to
+  the realtime publication.
+- **Auth:** anonymous (device) sign-in by default. Anonymous users are real
+  auth users, so RLS applies. Cross-device sync (phone + tablet) needs both
+  devices on the *same* account — use the magic-link helper in
+  `lib/supabase.ts`.
+- **Engine (`lib/sync.ts`):** last-write-wins on `updated_at`.
+  - *push* — rows flagged `pending_sync = 1` are upserted, then cleared.
+  - *pull* — rows changed since a per-table cursor are fetched and applied if
+    they win LWW.
+  - *realtime* — a Postgres-changes subscription applies other devices' writes
+    live.
+  - Deletes are tombstones (`deleted_at`) so they propagate like any edit.
+- **Triggers (`components/SyncProvider.tsx`):** initial sync on launch, a
+  debounced push after each local write, and a full sync on reconnect
+  (NetInfo) and on app foreground (AppState). Hooks and the engine stay
+  decoupled through a small event bus (`lib/syncBus.ts`).
+
+Known v1 limitation: the pull cursor advances with `updated_at > cursor`, so
+rows sharing an identical millisecond timestamp at a page boundary could be
+skipped until their next change — negligible for single-user volumes, worth
+revisiting if data grows.
 
 ## Cost & store
 

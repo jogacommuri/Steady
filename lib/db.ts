@@ -10,7 +10,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DATABASE_NAME = 'steady.db';
 
-const TARGET_USER_VERSION = 1;
+const TARGET_USER_VERSION = 2;
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA journal_mode = WAL;');
@@ -58,8 +58,28 @@ export async function migrate(db: SQLiteDatabase): Promise<void> {
     version = 1;
   }
 
-  // Future migrations append here, bumping `version` each step, e.g. a
-  // `sync_queue` table when Phase 3 lands.
+  if (version < 2) {
+    // Phase 3 sync support. Deletes become tombstones (deleted_at) so they can
+    // propagate to other devices; pending_sync = 1 marks a row as needing a
+    // push. Existing rows default to pending so the first sync backs them up.
+    for (const table of ['meals', 'weights', 'workouts']) {
+      await db.execAsync(`
+        ALTER TABLE ${table} ADD COLUMN deleted_at TEXT;
+        ALTER TABLE ${table} ADD COLUMN pending_sync INTEGER NOT NULL DEFAULT 1;
+        CREATE INDEX IF NOT EXISTS idx_${table}_pending ON ${table} (pending_sync);
+        CREATE INDEX IF NOT EXISTS idx_${table}_updated ON ${table} (updated_at);
+      `);
+    }
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS sync_meta (
+        key   TEXT PRIMARY KEY NOT NULL,
+        value TEXT
+      );
+    `);
+    version = 2;
+  }
+
+  // Future migrations append here, bumping `version` each step.
 
   if (version !== TARGET_USER_VERSION) {
     version = TARGET_USER_VERSION;

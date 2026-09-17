@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { nowIso } from '@/lib/dates';
+import { syncBus } from '@/lib/syncBus';
 import type { Meal, MealType } from '@/lib/types';
 import { uuid } from '@/lib/uuid';
 
@@ -44,7 +45,9 @@ export function useMeals() {
 
   const refresh = useCallback(async () => {
     const rows = await db.getAllAsync<MealRow>(
-      'SELECT * FROM meals ORDER BY date DESC, time DESC, created_at DESC'
+      `SELECT * FROM meals
+       WHERE deleted_at IS NULL
+       ORDER BY date DESC, time DESC, created_at DESC`
     );
     setMeals(rows.map(toMeal));
     setLoading(false);
@@ -52,6 +55,8 @@ export function useMeals() {
 
   useEffect(() => {
     refresh();
+    // Re-query when the sync engine applies remote changes.
+    return syncBus.onRemoteChange(refresh);
   }, [refresh]);
 
   const addMeal = useCallback(
@@ -62,6 +67,7 @@ export function useMeals() {
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [uuid(), input.date, input.mealType, input.time, input.text.trim(), ts, ts]
       );
+      syncBus.emitLocalChange();
       await refresh();
     },
     [db, refresh]
@@ -69,7 +75,13 @@ export function useMeals() {
 
   const removeMeal = useCallback(
     async (id: string) => {
-      await db.runAsync('DELETE FROM meals WHERE id = ?', [id]);
+      // Soft delete: tombstone so the deletion can sync to other devices.
+      const ts = nowIso();
+      await db.runAsync(
+        'UPDATE meals SET deleted_at = ?, updated_at = ?, pending_sync = 1 WHERE id = ?',
+        [ts, ts, id]
+      );
+      syncBus.emitLocalChange();
       await refresh();
     },
     [db, refresh]

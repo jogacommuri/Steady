@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { SyncProvider } from '@/components/SyncProvider';
 import { DATABASE_NAME, migrate } from '@/lib/db';
 import { useTheme } from '@/theme/useTheme';
 
@@ -35,9 +36,11 @@ export default function RootLayout() {
           useSuspense
         >
           <StatusBar style={dark ? 'light' : 'dark'} />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-          </Stack>
+          <SyncProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+            </Stack>
+          </SyncProvider>
         </SQLiteProvider>
       </Suspense>
     </SafeAreaProvider>

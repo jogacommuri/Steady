@@ -13,8 +13,10 @@ The full plan lives in [`docs/architecture.md`](docs/architecture.md).
 - ✅ **Phase 2 — Local-only:** SQLite CRUD for all three trackers. The app is
   fully usable offline — every entry is written to a local database and read
   back instantly. No backend required yet.
-- ⬜ **Phase 3 — Backend/sync:** Supabase push/pull (`lib/sync.ts`,
-  `lib/supabase.ts`) — not started.
+- ✅ **Phase 3 — Backend/sync:** offline-first Supabase sync (`lib/sync.ts`,
+  `lib/supabase.ts`, `components/SyncProvider.tsx`) — last-write-wins push/pull
+  plus realtime. **Optional:** with no Supabase env vars set, the app still
+  runs exactly as Phase 2 (local-only). See [Sync setup](#sync-setup-optional).
 
 ## Getting started
 
@@ -48,6 +50,26 @@ theme/        colour tokens + useTheme()
 docs/         architecture plan
 ```
 
+## Sync setup (optional)
+
+The app is local-first and runs with no backend. To turn on cloud backup and
+cross-device sync:
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Run [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL editor
+   (creates the tables, row-level security, and realtime).
+3. Enable **anonymous sign-ins** under Authentication → Providers.
+4. Copy `.env.example` to `.env` and fill in your project URL + anon key.
+5. Restart `npm start` — the app signs in and starts syncing automatically.
+
+Sync is last-write-wins on `updated_at`: local writes queue and push (debounced,
+and on reconnect/foreground), remote changes pull down and via realtime, and
+deletes propagate as tombstones. Anonymous auth gives one device cloud backup;
+to sync a phone **and** a tablet, sign both into the same account with the
+magic-link helper in `lib/supabase.ts`. See
+[`docs/architecture.md`](docs/architecture.md#phase-3--how-sync-works) for the
+full design.
+
 ## Data model
 
 Three tables — `meals`, `weights`, `workouts` — each row carrying a UUID plus
@@ -57,7 +79,7 @@ shapes.
 
 ## Notes
 
-- All data is currently stored **only on-device** in SQLite. It survives app
-  restarts but is not yet backed up or synced across devices — that arrives in
-  Phase 3.
+- Data is stored **on-device** in SQLite and works fully offline. Cloud backup
+  and cross-device sync are opt-in via Supabase — see
+  [Sync setup](#sync-setup-optional).
 - Weight is stored in **kg** for now; a unit preference is a Phase 4 candidate.
