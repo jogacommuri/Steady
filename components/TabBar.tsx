@@ -1,14 +1,23 @@
 import { useRouter } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs';
+import type { ReactElement } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { MealIcon, TodayIcon, WeightIcon, WorkoutIcon } from '@/components/icons';
 import { theme } from '@/theme/colors';
 import { weight } from '@/theme/typography';
 
+const TAB_ICONS: Record<string, (props: { size?: number; color: string }) => ReactElement> = {
+  today: TodayIcon,
+  meals: MealIcon,
+  weight: WeightIcon,
+  workouts: WorkoutIcon,
+};
+
 /**
- * The bottom tab bar: 4 equal tabs (each with a small square status dot) plus
- * a fixed-width accent "+" that always opens Log entry, regardless of which
+ * The bottom tab bar: 4 equal tabs (each with a small icon) plus a
+ * fixed-width accent "+" that always opens Log entry, regardless of which
  * tab is active.
  */
 export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -35,18 +44,16 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             }
           };
 
+          const Icon = TAB_ICONS[route.name];
+          const iconColor = isFocused ? theme.colors.accent : theme.colors.textMuted;
+
           return (
             <Pressable
               key={route.key}
               onPress={onPress}
               style={[styles.tab, { backgroundColor: isFocused ? theme.colors.text : 'transparent' }]}
             >
-              <View
-                style={[
-                  styles.dot,
-                  { backgroundColor: isFocused ? theme.colors.accent : theme.colors.borderLight },
-                ]}
-              />
+              {Icon ? <Icon size={19} color={iconColor} /> : <View style={[styles.dot, { backgroundColor: iconColor }]} />}
               <Text
                 style={[
                   weight('semibold'),
