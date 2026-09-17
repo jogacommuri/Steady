@@ -53,16 +53,17 @@ docs/         architecture plan
 ## Sync setup (optional)
 
 The app is local-first and runs with no backend. To turn on cloud backup and
-cross-device sync:
+cross-device sync, follow the step-by-step
+[**Supabase setup guide**](docs/supabase-setup.md) — in short:
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. Run [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL editor
-   (creates the tables, row-level security, and realtime). Its header comment
-   lists the required Authentication settings (anonymous + email providers,
-   and email templates that send a **6-digit code**, not just a magic link).
-3. Copy `.env.example` to `.env` and fill in your project URL + anon key.
-4. Restart `npm start` — the app signs in anonymously and starts syncing
-   automatically.
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Copy your Project URL + anon (publishable) key into `.env` (from
+   `.env.example`). You don't create any keys — Supabase generates them.
+3. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor
+   (tables, row-level security, realtime).
+4. Enable anonymous + email auth and set the email templates to send a
+   **6-digit code** (details in the setup guide).
+5. Restart `npm start` — the app signs in anonymously and syncs automatically.
 
 Sync is last-write-wins on `updated_at`: local writes queue and push (debounced,
 and on reconnect/foreground), remote changes pull down and via realtime, and
