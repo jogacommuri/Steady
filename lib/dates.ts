@@ -2,7 +2,8 @@
 
 const DAY_MS = 86_400_000;
 
-function isoFromDate(d: Date): string {
+/** A local Date's calendar day as YYYY-MM-DD (no timezone shift, unlike `Date#toISOString`). */
+export function isoDate(d: Date): string {
   const y = d.getFullYear();
   const m = `${d.getMonth() + 1}`.padStart(2, '0');
   const day = `${d.getDate()}`.padStart(2, '0');
@@ -11,7 +12,7 @@ function isoFromDate(d: Date): string {
 
 /** Local calendar day as YYYY-MM-DD. */
 export function today(): string {
-  return isoFromDate(new Date());
+  return isoDate(new Date());
 }
 
 /** Local wall-clock time as HH:MM. */
@@ -35,7 +36,7 @@ export function parseDay(date: string): Date {
 
 /** Offset a YYYY-MM-DD day by `n` days (may be negative). */
 export function addDays(date: string, n: number): string {
-  return isoFromDate(new Date(parseDay(date).getTime() + n * DAY_MS));
+  return isoDate(new Date(parseDay(date).getTime() + n * DAY_MS));
 }
 
 /** Human label for a YYYY-MM-DD date, e.g. "Tue, Sep 16". */

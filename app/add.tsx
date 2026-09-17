@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DateField } from '@/components/DateField';
 import { DetailHeader } from '@/components/DetailHeader';
 import { EntryForm, Field, TextField } from '@/components/EntryForm';
 import { OptionChips, SegmentedRow } from '@/components/ui';
@@ -31,6 +32,7 @@ export default function AddScreen() {
   const unit = goals.weightUnit;
 
   const [kind, setKind] = useState<Kind>(params.kind && KINDS.includes(params.kind) ? params.kind : 'meal');
+  const [date, setDate] = useState(today());
   const [mealType, setMealType] = useState<MealType>('breakfast');
   const [text, setText] = useState('');
   const [value, setValue] = useState('');
@@ -49,16 +51,16 @@ export default function AddScreen() {
   const submit = async () => {
     if (kind === 'meal') {
       if (!text.trim()) return;
-      await addMeal({ date: today(), mealType, time: nowTime(), text });
+      await addMeal({ date, mealType, time: nowTime(), text });
       showToast('Meal logged');
       router.replace('/meals');
     } else if (kind === 'weight') {
       if (!weightValid) return;
-      await addWeight({ date: today(), value: displayToKg(parsedWeight, unit), note });
+      await addWeight({ date, value: displayToKg(parsedWeight, unit), note });
       showToast('Weigh-in saved');
       router.replace('/weight');
     } else {
-      await addWorkout({ date: today(), workoutType, duration: durationValue, text });
+      await addWorkout({ date, workoutType, duration: durationValue, text });
       showToast('Workout logged');
       router.replace('/workouts');
     }
@@ -69,6 +71,10 @@ export default function AddScreen() {
       <DetailHeader title="Log entry" backLabel="Cancel" onBack={() => router.back()} />
       <SegmentedRow options={KINDS} value={kind} onChange={setKind} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}>
+        <View style={{ marginBottom: spacing.lg }}>
+          <DateField value={date} onChange={setDate} />
+        </View>
+
         {kind === 'meal' ? (
           <EntryForm
             onSubmit={submit}
