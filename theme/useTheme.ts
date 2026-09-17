@@ -8,13 +8,16 @@ export type Theme = {
 };
 
 /**
- * Resolve the active theme from the device colour scheme. Kept as a hook so
- * that when we add a manual light/dark override in Phase 4 it becomes the
- * single place to thread that state through.
+ * The app is currently pinned to the light theme. The dark palette and the
+ * device-scheme logic below are kept intact — flip FORCE_LIGHT to false to
+ * restore automatic light/dark (also set `userInterfaceStyle` back to
+ * "automatic" in app.json).
  */
+const FORCE_LIGHT = true;
+
 export function useTheme(): Theme {
   const scheme = useColorScheme();
-  const dark = scheme === 'dark';
+  const dark = FORCE_LIGHT ? false : scheme === 'dark';
   return {
     dark,
     colors: dark ? darkTheme : lightTheme,
