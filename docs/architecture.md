@@ -66,9 +66,10 @@ complexity for a single-user app.
 ```
 app/
   index.tsx           redirect → Meals
-  _layout.tsx         SQLiteProvider + migrations
+  _layout.tsx         SQLiteProvider + SyncProvider + migrations
+  account.tsx         Account & Sync screen (link/join email) — modal
   (tabs)/
-    _layout.tsx       bottom tab navigator
+    _layout.tsx       bottom tab navigator (⚙️ → account)
     meals.tsx
     weight.tsx
     workouts.tsx
@@ -76,6 +77,7 @@ components/
   MealRow.tsx, WeightRow.tsx, WorkoutRow.tsx
   EntryForm.tsx       shared form primitives
   ui.tsx              Card, Chip, EmptyState, DeleteButton
+  SyncProvider.tsx    sync lifecycle + account state (context)
 hooks/
   useMeals.ts, useWeights.ts, useWorkouts.ts
 lib/
@@ -109,10 +111,14 @@ theme/
 - **Schema:** run `supabase/schema.sql` once against a new Supabase project.
   It creates the three tables, owner-only row-level security, and adds them to
   the realtime publication.
-- **Auth:** anonymous (device) sign-in by default. Anonymous users are real
-  auth users, so RLS applies. Cross-device sync (phone + tablet) needs both
-  devices on the *same* account — use the magic-link helper in
-  `lib/supabase.ts`.
+- **Auth (anonymous → link email):** the app signs in anonymously by default,
+  so day one has no sign-in wall while still backing up the device. To sync a
+  phone + tablet, the Account screen (`app/account.tsx`) links an email to the
+  anonymous account — `updateUser({ email })` keeps the same user id, so no
+  data migrates — and the other device joins by signing in with that email
+  (6-digit code). When a device joins a different account, `SyncProvider`
+  detects the user-id change and calls `SyncEngine.resetForNewUser()` to
+  re-pull the shared history and re-push this device's local rows.
 - **Engine (`lib/sync.ts`):** last-write-wins on `updated_at`.
   - *push* — rows flagged `pending_sync = 1` are upserted, then cleared.
   - *pull* — rows changed since a per-table cursor are fetched and applied if
@@ -141,5 +147,6 @@ revisiting if data grows.
 ## Open questions
 
 - [ ] Personal use only, or App Store distribution eventually?
-- [ ] Single device, or sync across your own phone + tablet?
+- [x] Single device, or sync across your own phone + tablet? → **Cross-device**,
+  via anonymous → link-email accounts (see Auth above).
 - [ ] Keep Supabase, or prefer Firebase given any existing familiarity?

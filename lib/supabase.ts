@@ -35,11 +35,12 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
 
 /**
  * Ensure we have a session before syncing. Defaults to anonymous (device) auth,
- * matching the v1 plan — good enough for single-device cloud backup + realtime.
+ * so the first launch has zero sign-in friction and still gets cloud backup.
  *
- * NOTE: anonymous auth mints a *distinct* user per device, so two devices will
- * NOT see each other's data. To sync a phone + tablet, sign both into the same
- * account with `signInWithEmail` (magic link) instead.
+ * Anonymous auth mints a *distinct* user per device. To share data across a
+ * phone + tablet, the account is made permanent by linking an email
+ * (`linkEmail` on the first device) and joined on the other device
+ * (`sendSignInCode` + `verifyCode`). See the Account screen (app/account.tsx).
  */
 export async function ensureSession(): Promise<Session | null> {
   if (!supabase) return null;
@@ -52,10 +53,60 @@ export async function ensureSession(): Promise<Session | null> {
   return signIn.session;
 }
 
-/** Send a magic-link sign-in email — the path to true cross-device sync. */
-export async function signInWithEmail(email: string): Promise<void> {
+/**
+ * Snapshot of the signed-in account, surfaced to the UI via SyncProvider.
+ * `isAnonymous` means device-only backup; once `email` is set and confirmed,
+ * the same account can be joined from another device.
+ */
+export interface AccountInfo {
+  configured: boolean;
+  loading: boolean;
+  userId: string | null;
+  email: string | null;
+  isAnonymous: boolean;
+}
+
+/**
+ * Attach an email to the current (anonymous) account, keeping the same user id
+ * so no data has to migrate. Supabase emails a confirmation code; pass it to
+ * `verifyCode(email, code, 'link')`.
+ *
+ * Requires "Secure email change" to be configured in Supabase, and the email
+ * templates to send a code (`{{ .Token }}`) rather than only a magic link — see
+ * supabase/schema.sql.
+ */
+export async function linkEmail(email: string): Promise<void> {
   if (!supabase) throw new Error('Supabase is not configured');
-  const { error } = await supabase.auth.signInWithOtp({ email });
+  const { error } = await supabase.auth.updateUser({ email: email.trim() });
+  if (error) throw error;
+}
+
+/** Email a sign-in code to join an existing account from another device. */
+export async function sendSignInCode(email: string): Promise<void> {
+  if (!supabase) throw new Error('Supabase is not configured');
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.trim(),
+    // The account already exists (created when the first device linked email).
+    options: { shouldCreateUser: false },
+  });
+  if (error) throw error;
+}
+
+/**
+ * Verify an emailed code. `kind: 'link'` confirms an email just attached to
+ * this account; `kind: 'signin'` completes joining an account from a new device.
+ */
+export async function verifyCode(
+  email: string,
+  token: string,
+  kind: 'link' | 'signin'
+): Promise<void> {
+  if (!supabase) throw new Error('Supabase is not configured');
+  const { error } = await supabase.auth.verifyOtp({
+    email: email.trim(),
+    token: token.trim(),
+    type: kind === 'link' ? 'email_change' : 'email',
+  });
   if (error) throw error;
 }
 

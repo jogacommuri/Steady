@@ -57,16 +57,21 @@ cross-device sync:
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. Run [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL editor
-   (creates the tables, row-level security, and realtime).
-3. Enable **anonymous sign-ins** under Authentication → Providers.
-4. Copy `.env.example` to `.env` and fill in your project URL + anon key.
-5. Restart `npm start` — the app signs in and starts syncing automatically.
+   (creates the tables, row-level security, and realtime). Its header comment
+   lists the required Authentication settings (anonymous + email providers,
+   and email templates that send a **6-digit code**, not just a magic link).
+3. Copy `.env.example` to `.env` and fill in your project URL + anon key.
+4. Restart `npm start` — the app signs in anonymously and starts syncing
+   automatically.
 
 Sync is last-write-wins on `updated_at`: local writes queue and push (debounced,
 and on reconnect/foreground), remote changes pull down and via realtime, and
-deletes propagate as tombstones. Anonymous auth gives one device cloud backup;
-to sync a phone **and** a tablet, sign both into the same account with the
-magic-link helper in `lib/supabase.ts`. See
+deletes propagate as tombstones.
+
+**Accounts (Account & Sync screen — the ⚙️ button in any tab header):** the app
+starts with a zero-friction anonymous account that backs up *this* device. To
+share data across devices, **link an email** on the first device, then **join**
+that account with the same email (a 6-digit code) on the other device. See
 [`docs/architecture.md`](docs/architecture.md#phase-3--how-sync-works) for the
 full design.
 

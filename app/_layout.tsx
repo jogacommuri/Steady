@@ -26,7 +26,7 @@ function Loading() {
 }
 
 export default function RootLayout() {
-  const { dark } = useTheme();
+  const { dark, colors } = useTheme();
   return (
     <SafeAreaProvider>
       <Suspense fallback={<Loading />}>
@@ -39,6 +39,17 @@ export default function RootLayout() {
           <SyncProvider>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" />
+              <Stack.Screen
+                name="account"
+                options={{
+                  presentation: 'modal',
+                  headerShown: true,
+                  title: 'Account & Sync',
+                  headerStyle: { backgroundColor: colors.background },
+                  headerTitleStyle: { color: colors.text },
+                  headerTintColor: colors.plum,
+                }}
+              />
             </Stack>
           </SyncProvider>
         </SQLiteProvider>

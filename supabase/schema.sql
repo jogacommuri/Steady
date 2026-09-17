@@ -7,10 +7,19 @@
 --
 -- Auth: the app signs in anonymously by default (v1). Anonymous users are real
 -- auth users, so auth.uid() is populated and RLS works. To sync a phone and a
--- tablet, sign both into the SAME account (magic link) — see lib/supabase.ts.
-
--- Enable anonymous sign-ins under Authentication → Providers in the dashboard,
--- or with the Management API. RLS below applies to anonymous users too.
+-- tablet, the Account screen links an email to the anonymous account (keeping
+-- the same user id) and the other device signs in with that email.
+--
+-- Dashboard setup for that flow (Authentication settings):
+--   1. Enable "Anonymous sign-ins" (Providers → Anonymous).
+--   2. Enable the Email provider.
+--   3. The app uses 6-digit codes, not magic links (mobile has no deep link),
+--      so edit the "Magic Link" and "Change Email Address" email templates to
+--      include the code token, e.g.  Your code: {{ .Token }}
+--   4. Optional: disable "Secure email change" so linking only needs the new
+--      address confirmed (otherwise both old + new must be confirmed — awkward
+--      for an anonymous account with no prior email).
+-- RLS below applies to anonymous users too.
 
 -- ---------------------------------------------------------------------------
 -- meals

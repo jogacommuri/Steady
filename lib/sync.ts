@@ -72,6 +72,19 @@ export class SyncEngine {
     this.userId = userId;
   }
 
+  /**
+   * Called when the signed-in account changes (e.g. a second device joins an
+   * existing account). Clears pull cursors and re-flags every local row for
+   * push, so we pull the new account's full history and merge this device's
+   * local entries into it.
+   */
+  async resetForNewUser(): Promise<void> {
+    await this.db.runAsync("DELETE FROM sync_meta WHERE key LIKE 'cursor:%'");
+    for (const t of SYNC_TABLES) {
+      await this.db.runAsync(`UPDATE ${t.name} SET pending_sync = 1`);
+    }
+  }
+
   /** Push local changes, then pull remote ones. Returns rows applied locally. */
   async syncAll(): Promise<number> {
     if (!this.enabled) return 0;

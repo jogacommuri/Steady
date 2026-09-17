@@ -11,21 +11,37 @@ import {
   type ReactNode,
 } from 'react';
 import { AppState } from 'react-native';
+import type { Session } from '@supabase/supabase-js';
 
 import { SyncEngine } from '@/lib/sync';
 import { syncBus } from '@/lib/syncBus';
-import { ensureSession, isSupabaseConfigured, supabase } from '@/lib/supabase';
+import {
+  ensureSession,
+  isSupabaseConfigured,
+  supabase,
+  type AccountInfo,
+} from '@/lib/supabase';
 
 export type SyncStatus = 'disabled' | 'idle' | 'syncing' | 'error';
 
 interface SyncContextValue {
   status: SyncStatus;
+  account: AccountInfo;
   /** Trigger a manual push+pull. */
   sync: () => void;
 }
 
+const initialAccount: AccountInfo = {
+  configured: isSupabaseConfigured,
+  loading: isSupabaseConfigured,
+  userId: null,
+  email: null,
+  isAnonymous: false,
+};
+
 const SyncContext = createContext<SyncContextValue>({
   status: 'disabled',
+  account: initialAccount,
   sync: () => undefined,
 });
 
@@ -51,6 +67,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SyncStatus>(
     isSupabaseConfigured ? 'idle' : 'disabled'
   );
+  const [account, setAccount] = useState<AccountInfo>(initialAccount);
 
   // Coalesce overlapping sync requests into one in-flight run plus one rerun.
   const running = useRef(false);
@@ -84,6 +101,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
     let cancelled = false;
     let unsubscribeRealtime: () => void = () => {};
+    const prevUserId = { current: null as string | null };
 
     const resubscribe = () => {
       unsubscribeRealtime();
@@ -92,24 +110,60 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       );
     };
 
+    const handleSession = async (session: Session | null) => {
+      if (cancelled) return;
+      const user = session?.user ?? null;
+
+      // Signed out while configured — fall back to a fresh anonymous account.
+      // The resulting SIGNED_IN event re-enters here.
+      if (!user) {
+        try {
+          await ensureSession();
+        } catch {
+          if (!cancelled) setStatus('error');
+        }
+        return;
+      }
+
+      const newId = user.id;
+      const switched = prevUserId.current !== null && prevUserId.current !== newId;
+      prevUserId.current = newId;
+
+      engine.setUser(newId);
+      if (switched) {
+        // A different account (e.g. a second device joined): re-pull + re-push.
+        await engine.resetForNewUser();
+        syncBus.emitRemoteChange();
+      }
+
+      setAccount({
+        configured: true,
+        loading: false,
+        userId: newId,
+        email: user.email ?? null,
+        isAnonymous: user.is_anonymous ?? false,
+      });
+
+      resubscribe();
+      await runSync();
+    };
+
     const boot = async () => {
       try {
         const session = await ensureSession();
-        if (cancelled) return;
-        engine.setUser(session?.user?.id ?? null);
-        resubscribe();
-        await runSync();
+        await handleSession(session);
       } catch {
-        if (!cancelled) setStatus('error');
+        if (!cancelled) {
+          setStatus('error');
+          setAccount((a) => ({ ...a, loading: false }));
+        }
       }
     };
     void boot();
 
     const { data: authSub } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        engine.setUser(session?.user?.id ?? null);
-        resubscribe();
-        void runSync();
+        void handleSession(session);
       }
     );
 
@@ -139,8 +193,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   }, [engine, runSync]);
 
   const value = useMemo<SyncContextValue>(
-    () => ({ status, sync: () => void runSync() }),
-    [status, runSync]
+    () => ({ status, account, sync: () => void runSync() }),
+    [status, account, runSync]
   );
 
   return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;
