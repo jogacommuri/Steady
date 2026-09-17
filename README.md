@@ -25,10 +25,11 @@ npm install
 npm start        # then press i (iOS), a (Android), or w (web)
 ```
 
-Requires [Node 18+](https://nodejs.org) and the
+Built on **Expo SDK 57** (React Native 0.86). Requires
+[Node 20+](https://nodejs.org) and the
 [Expo tooling](https://docs.expo.dev/get-started/set-up-your-environment/)
-(`npm start` uses the bundled `expo` CLI). On a phone, install **Expo Go** and
-scan the QR code.
+(`npm start` uses the bundled `expo` CLI). On a phone, install a current
+**Expo Go** (it supports the latest SDKs) and scan the QR code.
 
 ### Useful scripts
 
