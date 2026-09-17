@@ -3,27 +3,34 @@ import { StyleSheet, Text, View } from 'react-native';
 import { spacing, theme } from '@/theme/colors';
 import { weight } from '@/theme/typography';
 import { formatDay } from '@/lib/dates';
-import type { Weight } from '@/lib/types';
+import type { Weight, WeightUnit } from '@/lib/types';
+import { formatWeight, kgToDisplay } from '@/lib/units';
 
 import { DeleteButton, RuleLight } from './ui';
 
 export function WeightRow({
   weightEntry,
   delta,
+  unit,
   onDelete,
 }: {
   weightEntry: Weight;
-  /** Change vs. the next-older entry, if any. */
+  /** Change vs. the next-older entry (kg), if any. */
   delta?: number | null;
+  unit: WeightUnit;
   onDelete: (id: string) => void;
 }) {
-  const deltaLabel = delta == null || Math.abs(delta) < 0.05 ? '—' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)}`;
+  const deltaDisplay = delta == null ? null : kgToDisplay(delta, unit);
+  const deltaLabel =
+    deltaDisplay == null || Math.abs(delta ?? 0) < 0.05
+      ? '—'
+      : `${deltaDisplay > 0 ? '+' : ''}${deltaDisplay.toFixed(1)}`;
   const deltaColor = delta != null && delta < 0 ? theme.colors.accentText : theme.colors.textMuted;
 
   return (
     <View>
       <View style={styles.row}>
-        <Text style={[weight('bold'), styles.value]}>{weightEntry.value.toFixed(1)}</Text>
+        <Text style={[weight('bold'), styles.value]}>{formatWeight(weightEntry.value, unit)}</Text>
         <Text style={[weight('semibold'), styles.delta, { color: deltaColor }]}>{deltaLabel}</Text>
         <Text style={[weight('medium'), styles.meta]}>
           {formatDay(weightEntry.date)}

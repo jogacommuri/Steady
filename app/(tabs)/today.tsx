@@ -12,6 +12,7 @@ import { useWeights } from '@/hooks/useWeights';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { formatDay, today } from '@/lib/dates';
 import { buildDayLog, weekMinutes, weekWorkoutCount } from '@/lib/insights';
+import { formatWeight } from '@/lib/units';
 import { spacing, theme } from '@/theme/colors';
 import { weight } from '@/theme/typography';
 
@@ -33,7 +34,7 @@ export default function TodayScreen() {
     const minutes = weekMinutes(workouts, todayStr);
     const sessions = weekWorkoutCount(workouts, todayStr);
     const activeToday = workoutsToday.reduce((sum, w) => sum + w.duration, 0);
-    const log = buildDayLog(todayStr, meals, weights, workouts);
+    const log = buildDayLog(todayStr, meals, weights, workouts, goals.weightUnit);
 
     const weightPct =
       latestWeight == null
@@ -75,8 +76,8 @@ export default function TodayScreen() {
           />
           <StatCell
             kicker="Weight"
-            value={stats.weightToday ? stats.weightToday.value.toFixed(1) : '—'}
-            meta={stats.weightToday ? 'kg' : 'not logged'}
+            value={stats.weightToday ? formatWeight(stats.weightToday.value, goals.weightUnit) : '—'}
+            meta={stats.weightToday ? goals.weightUnit : 'not logged'}
             onPress={() => router.push('/weight')}
           />
           <StatCell
@@ -93,7 +94,7 @@ export default function TodayScreen() {
           <View style={styles.goalsList}>
             <GoalBar
               label="Weight to target"
-              readout={`${(stats.latestWeight ?? goals.targetWeight).toFixed(1)} → ${goals.targetWeight.toFixed(1)} kg`}
+              readout={`${formatWeight(stats.latestWeight ?? goals.targetWeight, goals.weightUnit)} → ${formatWeight(goals.targetWeight, goals.weightUnit)} ${goals.weightUnit}`}
               pct={stats.weightPct}
               fill={theme.colors.text}
             />

@@ -6,12 +6,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DetailHeader } from '@/components/DetailHeader';
 import { EntryForm, Field, TextField } from '@/components/EntryForm';
 import { OptionChips, SegmentedRow } from '@/components/ui';
+import { useGoals } from '@/hooks/useGoals';
 import { useMeals } from '@/hooks/useMeals';
 import { useWeights } from '@/hooks/useWeights';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { nowTime, today } from '@/lib/dates';
 import { showToast } from '@/lib/toastBus';
 import { MEAL_TYPES, WORKOUT_TYPES, type MealType, type WorkoutType } from '@/lib/types';
+import { displayToKg } from '@/lib/units';
 import { spacing, theme } from '@/theme/colors';
 
 type Kind = 'meal' | 'weight' | 'workout';
@@ -25,6 +27,8 @@ export default function AddScreen() {
   const { addMeal } = useMeals();
   const { addWeight } = useWeights();
   const { addWorkout } = useWorkouts();
+  const { goals } = useGoals();
+  const unit = goals.weightUnit;
 
   const [kind, setKind] = useState<Kind>(params.kind && KINDS.includes(params.kind) ? params.kind : 'meal');
   const [mealType, setMealType] = useState<MealType>('breakfast');
@@ -50,7 +54,7 @@ export default function AddScreen() {
       router.replace('/meals');
     } else if (kind === 'weight') {
       if (!weightValid) return;
-      await addWeight({ date: today(), value: parsedWeight, note });
+      await addWeight({ date: today(), value: displayToKg(parsedWeight, unit), note });
       showToast('Weigh-in saved');
       router.replace('/weight');
     } else {
@@ -86,8 +90,14 @@ export default function AddScreen() {
             disabled={disabled}
             footnote="Saved to the on-device database first — it works with no connection."
           >
-            <Field label="Weight (kg)">
-              <TextField value={value} onChangeText={setValue} placeholder="e.g. 75.4" keyboardType="decimal-pad" big />
+            <Field label={`Weight (${unit})`}>
+              <TextField
+                value={value}
+                onChangeText={setValue}
+                placeholder={unit === 'kg' ? 'e.g. 75.4' : 'e.g. 166.4'}
+                keyboardType="decimal-pad"
+                big
+              />
             </Field>
             <Field label="Note (optional)">
               <TextField value={note} onChangeText={setNote} placeholder="e.g. morning, after run" />

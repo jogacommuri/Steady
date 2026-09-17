@@ -10,7 +10,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DATABASE_NAME = 'steady.db';
 
-const TARGET_USER_VERSION = 3;
+const TARGET_USER_VERSION = 4;
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA journal_mode = WAL;');
@@ -101,6 +101,16 @@ export async function migrate(db: SQLiteDatabase): Promise<void> {
       [new Date().toISOString()]
     );
     version = 3;
+  }
+
+  if (version < 4) {
+    // Display-unit preference for weight (kg/lb). Weight rows themselves stay
+    // in kg always — this only affects how they're formatted and how new
+    // entries are parsed. Lives on the same device-local `goals` row.
+    await db.execAsync(
+      `ALTER TABLE goals ADD COLUMN weight_unit TEXT NOT NULL DEFAULT 'kg';`
+    );
+    version = 4;
   }
 
   // Future migrations append here, bumping `version` each step.

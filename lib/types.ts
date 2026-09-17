@@ -21,11 +21,13 @@ export interface Meal {
 export interface Weight {
   id: string;
   date: string; // YYYY-MM-DD
-  value: number; // in the user's preferred unit (kg for now)
+  value: number; // always kg — see lib/units.ts for display conversion
   note: string;
   createdAt: string;
   updatedAt: string;
 }
+
+export type WeightUnit = 'kg' | 'lb';
 
 export type WorkoutType =
   | 'cardio'
@@ -60,12 +62,14 @@ export const WORKOUT_TYPES: WorkoutType[] = [
 ];
 
 /**
- * Targets, edited on the Goals screen. Device-local (see `lib/db.ts` — no
- * Supabase table yet), a single row rather than a synced collection.
+ * Targets + display preferences, edited on the Goals screen. Device-local
+ * (see `lib/db.ts` — no Supabase table yet), a single row rather than a
+ * synced collection. `targetWeight` is always kg, regardless of `weightUnit`.
  */
 export interface Goals {
   targetWeight: number; // kg
   workoutsPerWeek: number;
   minutesPerWeek: number;
   mealsPerDay: number;
+  weightUnit: WeightUnit;
 }

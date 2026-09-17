@@ -102,4 +102,6 @@ for the row shapes.
 - Data is stored **on-device** in SQLite and works fully offline. Cloud backup
   and cross-device sync are opt-in via Supabase — see
   [Sync setup](#sync-setup-optional).
-- Weight is stored in **kg** for now; a unit preference is a Phase 4 candidate.
+- Weight is always stored in **kg**; a kg/lb display toggle (Weight tab, next
+  to the current reading) converts for display and for new entries. The
+  preference lives on the same device-local `goals` row. See `lib/units.ts`.

@@ -6,7 +6,8 @@
  */
 
 import { addDays, formatDay } from './dates';
-import type { Meal, Weight, Workout } from './types';
+import type { Meal, Weight, WeightUnit, Workout } from './types';
+import { formatWeight } from './units';
 
 const DAY_MS = 86_400_000;
 
@@ -112,7 +113,8 @@ export function buildDayLog(
   date: string,
   meals: readonly Meal[],
   weights: readonly Weight[],
-  workouts: readonly Workout[]
+  workouts: readonly Workout[],
+  weightUnit: WeightUnit = 'kg'
 ): LogEntry[] {
   const rows: LogEntry[] = [
     ...weights
@@ -121,7 +123,7 @@ export function buildDayLog(
         id: w.id,
         time: '07:00',
         kind: 'Weight',
-        text: `${w.value.toFixed(1)} kg${w.note ? ` · ${w.note}` : ''}`,
+        text: `${formatWeight(w.value, weightUnit)} ${weightUnit}${w.note ? ` · ${w.note}` : ''}`,
         tone: 'accent' as const,
       })),
     ...meals

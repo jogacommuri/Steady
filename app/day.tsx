@@ -6,11 +6,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DetailHeader } from '@/components/DetailHeader';
 import { LogList } from '@/components/LogList';
 import { Kicker } from '@/components/ui';
+import { useGoals } from '@/hooks/useGoals';
 import { useMeals } from '@/hooks/useMeals';
 import { useWeights } from '@/hooks/useWeights';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { formatDay, today } from '@/lib/dates';
 import { buildDayLog } from '@/lib/insights';
+import { formatWeight } from '@/lib/units';
 import { spacing, theme } from '@/theme/colors';
 import { weight } from '@/theme/typography';
 
@@ -21,6 +23,7 @@ export default function DayScreen() {
   const { meals } = useMeals();
   const { weights } = useWeights();
   const { workouts } = useWorkouts();
+  const { goals } = useGoals();
 
   const todayStr = today();
   const day = date ?? todayStr;
@@ -30,11 +33,11 @@ export default function DayScreen() {
     const dayMinutes = workouts.filter((w) => w.date === day).reduce((sum, w) => sum + w.duration, 0);
     return {
       label: day === todayStr ? 'Today' : formatDay(day),
-      weightLabel: dayWeight ? `${dayWeight.value.toFixed(1)} kg` : '—',
+      weightLabel: dayWeight ? `${formatWeight(dayWeight.value, goals.weightUnit)} ${goals.weightUnit}` : '—',
       minutes: dayMinutes,
-      log: buildDayLog(day, meals, weights, workouts),
+      log: buildDayLog(day, meals, weights, workouts, goals.weightUnit),
     };
-  }, [day, todayStr, meals, weights, workouts]);
+  }, [day, todayStr, meals, weights, workouts, goals.weightUnit]);
 
   return (
     <View style={styles.container}>

@@ -8,8 +8,11 @@ import { PrimaryButton } from '@/components/ui';
 import { useGoals } from '@/hooks/useGoals';
 import { showToast } from '@/lib/toastBus';
 import type { Goals } from '@/lib/types';
+import { displayToKg, formatWeight, kgToDisplay } from '@/lib/units';
 import { spacing, theme } from '@/theme/colors';
 import { weight } from '@/theme/typography';
+
+type NumericGoalKey = 'targetWeight' | 'workoutsPerWeek' | 'minutesPerWeek' | 'mealsPerDay';
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, +v.toFixed(1)));
 
@@ -17,9 +20,17 @@ export default function GoalsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { goals, saveGoals } = useGoals();
+  const unit = goals.weightUnit;
 
-  const bump = (key: keyof Goals, step: number, min: number, max: number) => () => {
+  const bump = (key: NumericGoalKey, step: number, min: number, max: number) => () => {
     saveGoals({ ...goals, [key]: clamp(goals[key] + step, min, max) });
+  };
+
+  /** Target weight steps by a fixed amount in the *display* unit, converted back to kg for storage. */
+  const bumpTargetWeight = (stepDisplay: number) => () => {
+    const [min, max] = unit === 'kg' ? [40, 200] : [88, 440];
+    const nextDisplay = clamp(kgToDisplay(goals.targetWeight, unit) + stepDisplay, min, max);
+    saveGoals({ ...goals, targetWeight: displayToKg(nextDisplay, unit) });
   };
 
   const save = () => {
@@ -37,10 +48,10 @@ export default function GoalsScreen() {
 
         <GoalStepper
           label="Target weight"
-          hint="In kg, adjusted in 0.5 steps"
-          value={`${goals.targetWeight.toFixed(1)} kg`}
-          onDecrease={bump('targetWeight', -0.5, 40, 200)}
-          onIncrease={bump('targetWeight', 0.5, 40, 200)}
+          hint={`In ${unit}, adjusted in 0.5 steps`}
+          value={`${formatWeight(goals.targetWeight, unit)} ${unit}`}
+          onDecrease={bumpTargetWeight(-0.5)}
+          onIncrease={bumpTargetWeight(0.5)}
         />
         <GoalStepper
           label="Workouts per week"
