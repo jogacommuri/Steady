@@ -14,9 +14,10 @@ import { syncBus } from './syncBus';
  * re-query, since this write happens outside their normal call path (the
  * same signal `useMeals`/etc. already listen for after a sync pull).
  */
-export async function enrichMealCalories(db: SQLiteDatabase, mealId: string, text: string): Promise<void> {
+/** Returns whether it actually set a value — lets a caller (e.g. a backfill pass) count successes. */
+export async function enrichMealCalories(db: SQLiteDatabase, mealId: string, text: string): Promise<boolean> {
   const key = normalizeMealText(text);
-  if (!key) return;
+  if (!key) return false;
 
   const cached = await db.getFirstAsync<{ calories: number }>(
     'SELECT calories FROM calorie_cache WHERE text_key = ?',
@@ -36,14 +37,15 @@ export async function enrichMealCalories(db: SQLiteDatabase, mealId: string, tex
       );
     }
   }
-  if (calories == null) return;
+  if (calories == null) return false;
 
   const result = await db.runAsync(
     'UPDATE meals SET calories = ?, updated_at = ?, pending_sync = 1 WHERE id = ? AND deleted_at IS NULL',
     [calories, nowIso(), mealId]
   );
-  if (result.changes === 0) return; // meal was deleted before the estimate came back
+  if (result.changes === 0) return false; // meal was deleted before the estimate came back
 
   syncBus.emitLocalChange();
   syncBus.emitRemoteChange();
+  return true;
 }

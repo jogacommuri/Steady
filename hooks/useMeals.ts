@@ -103,5 +103,23 @@ export function useMeals() {
     [db, refresh]
   );
 
-  return { meals, loading, addMeal, removeMeal, refresh };
+  /**
+   * One-off manual pass over existing meals logged before auto-estimation was
+   * turned on (or before this feature existed at all) — those never get
+   * enriched on their own, since `addMeal` only fires it at insert time.
+   * Sequential, not parallel, so repeats hit the local cache instead of
+   * hammering the API, and so a free-tier rate limit fails gracefully one
+   * request at a time rather than all at once.
+   */
+  const backfillCalories = useCallback(async (): Promise<{ attempted: number; filled: number }> => {
+    const targets = meals.filter((m) => m.calories == null);
+    let filled = 0;
+    for (const m of targets) {
+      if (await enrichMealCalories(db, m.id, m.text)) filled += 1;
+    }
+    await refresh();
+    return { attempted: targets.length, filled };
+  }, [db, meals, refresh]);
+
+  return { meals, loading, addMeal, removeMeal, refresh, backfillCalories };
 }

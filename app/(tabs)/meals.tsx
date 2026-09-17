@@ -4,10 +4,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/AppHeader';
 import { MealRow } from '@/components/MealRow';
-import { EmptyState, Kicker, Rule, RuleLight, SegmentedRow } from '@/components/ui';
+import { EmptyState, Kicker, Rule, RuleLight, SecondaryButton, SegmentedRow } from '@/components/ui';
 import { useMeals } from '@/hooks/useMeals';
 import { formatDay, today } from '@/lib/dates';
 import { averageCaloriesByMealType, averageDailyCalories, lastNDays } from '@/lib/insights';
+import { isNutritionApiConfigured } from '@/lib/nutrition';
+import { showToast } from '@/lib/toastBus';
 import { MEAL_TYPES, type MealType } from '@/lib/types';
 import { spacing, theme } from '@/theme/colors';
 import { weight } from '@/theme/typography';
@@ -19,9 +21,21 @@ type Filter = (typeof FILTERS)[number];
 
 export default function MealsScreen() {
   const insets = useSafeAreaInsets();
-  const { meals, removeMeal } = useMeals();
+  const { meals, removeMeal, backfillCalories } = useMeals();
   const [filter, setFilter] = useState<Filter>('all');
+  const [backfilling, setBackfilling] = useState(false);
   const todayStr = today();
+  const missingCount = meals.filter((m) => m.calories == null).length;
+
+  const runBackfill = async () => {
+    setBackfilling(true);
+    try {
+      const { attempted, filled } = await backfillCalories();
+      showToast(filled > 0 ? `Estimated ${filled} of ${attempted}` : 'No estimates found');
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const groups = useMemo(() => {
     const filtered = filter === 'all' ? meals : meals.filter((m) => m.mealType === (filter as MealType));
@@ -52,6 +66,25 @@ export default function MealsScreen() {
           <Text style={[weight('medium'), styles.subtitle]}>{meals.length} entries</Text>
         </View>
         <Rule />
+
+        {isNutritionApiConfigured && missingCount > 0 ? (
+          <>
+            <View style={styles.backfillSection}>
+              <Text style={[weight('medium'), styles.backfillCopy]}>
+                {missingCount} {missingCount === 1 ? 'meal has' : 'meals have'} no calorie estimate — including any
+                logged before you set this up.
+              </Text>
+              <View style={{ marginTop: spacing.sm }}>
+                <SecondaryButton
+                  label={backfilling ? 'Estimating…' : 'Estimate now'}
+                  onPress={runBackfill}
+                  disabled={backfilling}
+                />
+              </View>
+            </View>
+            <Rule />
+          </>
+        ) : null}
 
         {avgDaily != null ? (
           <>
@@ -112,6 +145,8 @@ const styles = StyleSheet.create({
   groupHeader: { backgroundColor: theme.colors.surface, paddingHorizontal: spacing.lg, paddingVertical: 12 },
   groupLabel: { fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: theme.colors.textMuted },
   list: { paddingHorizontal: spacing.lg },
+  backfillSection: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg },
+  backfillCopy: { fontSize: 12, lineHeight: 17, color: theme.colors.textMuted },
   calorieSection: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg },
   calorieHeadline: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, marginTop: spacing.sm },
   calorieValue: { fontSize: 34, letterSpacing: -1, color: theme.colors.text },
