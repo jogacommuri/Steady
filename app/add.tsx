@@ -9,6 +9,7 @@ import { EntryForm, Field, TextField } from '@/components/EntryForm';
 import { OptionChips, SegmentedRow } from '@/components/ui';
 import { useGoals } from '@/hooks/useGoals';
 import { useMeals } from '@/hooks/useMeals';
+import { useSteps } from '@/hooks/useSteps';
 import { useWeights } from '@/hooks/useWeights';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { nowTime, today } from '@/lib/dates';
@@ -17,8 +18,8 @@ import { MEAL_TYPES, WORKOUT_TYPES, type MealType, type WorkoutType } from '@/li
 import { displayToKg } from '@/lib/units';
 import { spacing, theme } from '@/theme/colors';
 
-type Kind = 'meal' | 'weight' | 'workout';
-const KINDS: Kind[] = ['meal', 'weight', 'workout'];
+type Kind = 'meal' | 'weight' | 'workout' | 'steps';
+const KINDS: Kind[] = ['meal', 'weight', 'workout', 'steps'];
 
 export default function AddScreen() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function AddScreen() {
   const { addMeal } = useMeals();
   const { addWeight } = useWeights();
   const { addWorkout } = useWorkouts();
+  const { setSteps } = useSteps();
   const { goals } = useGoals();
   const unit = goals.weightUnit;
 
@@ -40,14 +42,23 @@ export default function AddScreen() {
   const [note, setNote] = useState('');
   const [workoutType, setWorkoutType] = useState<WorkoutType>('cardio');
   const [duration, setDuration] = useState('');
+  const [stepsCount, setStepsCount] = useState('');
 
   const parsedWeight = Number.parseFloat(value.replace(',', '.'));
   const weightValid = Number.isFinite(parsedWeight) && parsedWeight > 0;
   const parsedDuration = Number.parseInt(duration, 10);
   const durationValue = Number.isFinite(parsedDuration) ? parsedDuration : 0;
+  const parsedSteps = Number.parseInt(stepsCount, 10);
+  const stepsValid = Number.isFinite(parsedSteps) && parsedSteps > 0;
 
   const disabled =
-    kind === 'meal' ? !text.trim() : kind === 'weight' ? !weightValid : durationValue <= 0 && !text.trim();
+    kind === 'meal'
+      ? !text.trim()
+      : kind === 'weight'
+        ? !weightValid
+        : kind === 'steps'
+          ? !stepsValid
+          : durationValue <= 0 && !text.trim();
 
   const submit = async () => {
     if (kind === 'meal') {
@@ -67,6 +78,11 @@ export default function AddScreen() {
       await addWeight({ date, value: displayToKg(parsedWeight, unit), note });
       showToast('Weigh-in saved');
       router.replace('/weight');
+    } else if (kind === 'steps') {
+      if (!stepsValid) return;
+      await setSteps(date, parsedSteps);
+      showToast('Steps logged');
+      router.replace('/workouts');
     } else {
       await addWorkout({ date, workoutType, duration: durationValue, text });
       showToast('Workout logged');
@@ -147,6 +163,24 @@ export default function AddScreen() {
             </Field>
             <Field label="Notes (optional)">
               <TextField value={text} onChangeText={setText} placeholder="e.g. 5k easy pace" />
+            </Field>
+          </EntryForm>
+        ) : null}
+
+        {kind === 'steps' ? (
+          <EntryForm
+            onSubmit={submit}
+            disabled={disabled}
+            footnote="One total per day — logging again for the same date updates it instead of adding a duplicate."
+          >
+            <Field label="Steps">
+              <TextField
+                value={stepsCount}
+                onChangeText={setStepsCount}
+                placeholder="e.g. 8500"
+                keyboardType="number-pad"
+                big
+              />
             </Field>
           </EntryForm>
         ) : null}

@@ -10,7 +10,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DATABASE_NAME = 'steady.db';
 
-const TARGET_USER_VERSION = 5;
+const TARGET_USER_VERSION = 6;
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA journal_mode = WAL;');
@@ -133,6 +133,29 @@ export async function migrate(db: SQLiteDatabase): Promise<void> {
       ALTER TABLE goals ADD COLUMN auto_calories INTEGER NOT NULL DEFAULT 0;
     `);
     version = 5;
+  }
+
+  if (version < 6) {
+    // Manual step entries — one row per day (a re-entry for the same date
+    // updates that row rather than adding a second one; see
+    // hooks/useSteps.ts). No HealthKit/native step-counter integration yet
+    // (Expo Go can't host that; parked for a future phase) — this is
+    // type-in-your-own-count, synced like meals/weights/workouts.
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS steps (
+        id           TEXT PRIMARY KEY NOT NULL,
+        date         TEXT NOT NULL,
+        count        INTEGER NOT NULL,
+        created_at   TEXT NOT NULL,
+        updated_at   TEXT NOT NULL,
+        deleted_at   TEXT,
+        pending_sync INTEGER NOT NULL DEFAULT 1
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_steps_date ON steps (date) WHERE deleted_at IS NULL;
+      CREATE INDEX IF NOT EXISTS idx_steps_pending ON steps (pending_sync);
+      CREATE INDEX IF NOT EXISTS idx_steps_updated ON steps (updated_at);
+    `);
+    version = 6;
   }
 
   // Future migrations append here, bumping `version` each step.

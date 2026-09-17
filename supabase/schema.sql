@@ -77,13 +77,37 @@ create index if not exists idx_workouts_user_updated
   on public.workouts (user_id, updated_at);
 
 -- ---------------------------------------------------------------------------
+-- steps — manual daily total, one (non-deleted) row per user per date.
+-- No HealthKit/native step-counter yet (parked for a future phase) — this is
+-- type-in-your-own-count, synced like the trackers above.
+-- ---------------------------------------------------------------------------
+create table if not exists public.steps (
+  id         uuid primary key,
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  date       text not null,
+  count      integer not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+create index if not exists idx_steps_user_updated
+  on public.steps (user_id, updated_at);
+create unique index if not exists idx_steps_user_date
+  on public.steps (user_id, date) where deleted_at is null;
+
+-- Upgrading an existing project? Run just this block once:
+--   create table if not exists public.steps ( ... same as above ... );
+--   (then the RLS + realtime `do $$` blocks below, unchanged — they're
+--   idempotent and safe to re-run against tables that already have them.)
+
+-- ---------------------------------------------------------------------------
 -- Row-level security: owner-only access.
 -- ---------------------------------------------------------------------------
 do $$
 declare
   t text;
 begin
-  foreach t in array array['meals', 'weights', 'workouts'] loop
+  foreach t in array array['meals', 'weights', 'workouts', 'steps'] loop
     execute format('alter table public.%I enable row level security;', t);
 
     execute format($p$
@@ -105,6 +129,7 @@ begin
   alter publication supabase_realtime add table public.meals;
   alter publication supabase_realtime add table public.weights;
   alter publication supabase_realtime add table public.workouts;
+  alter publication supabase_realtime add table public.steps;
 exception
   when duplicate_object then null; -- already in the publication
 end $$;

@@ -43,6 +43,10 @@ export const SYNC_TABLES: readonly TableSpec[] = [
     name: 'workouts',
     columns: ['id', 'date', 'workout_type', 'duration', 'text', 'created_at', 'updated_at', 'deleted_at'],
   },
+  {
+    name: 'steps',
+    columns: ['id', 'date', 'count', 'created_at', 'updated_at', 'deleted_at'],
+  },
 ];
 
 function toIsoOrNull(value: unknown): string | null {

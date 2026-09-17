@@ -6,7 +6,7 @@
  */
 
 import { addDays, formatDay } from './dates';
-import { MEAL_TYPES, type Meal, type MealType, type Weight, type WeightUnit, type Workout } from './types';
+import { MEAL_TYPES, type Meal, type MealType, type Steps, type Weight, type WeightUnit, type Workout } from './types';
 import { formatWeight } from './units';
 
 const DAY_MS = 86_400_000;
@@ -91,6 +91,13 @@ export function weekWorkoutCount(
   weeksAgo = 0
 ): number {
   return workouts.filter((w) => inWindow(w.date, refDate, 7, weeksAgo)).length;
+}
+
+/** Average daily step count over the 7-day window; `null` if none logged in it. */
+export function weekAvgSteps(steps: readonly Steps[], refDate: string, weeksAgo = 0): number | null {
+  const inRange = steps.filter((s) => inWindow(s.date, refDate, 7, weeksAgo));
+  if (inRange.length === 0) return null;
+  return Math.round(inRange.reduce((sum, s) => sum + s.count, 0) / inRange.length);
 }
 
 export interface WeekBar {

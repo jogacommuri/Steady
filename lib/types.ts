@@ -48,6 +48,15 @@ export interface Workout {
   updatedAt: string;
 }
 
+/** Manual daily total — one row per date. See hooks/useSteps.ts. */
+export interface Steps {
+  id: string;
+  date: string; // YYYY-MM-DD
+  count: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const MEAL_TYPES: MealType[] = [
   'breakfast',
   'lunch',
