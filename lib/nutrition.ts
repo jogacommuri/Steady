@@ -1,8 +1,8 @@
 /**
  * Best-effort calorie estimation for a free-text meal description. This
  * calls a Supabase Edge Function (supabase/functions/estimate-calories),
- * which proxies to Claude — the Anthropic API key lives server-side as a
- * Supabase secret and never ships in the app bundle. Opt-in: only called
+ * which proxies to OpenAI — the API key lives server-side as a Supabase
+ * secret and never ships in the app bundle. Opt-in: only called
  * when the user has turned on "Estimate calories automatically" on the
  * Goals screen (or run the Meals tab's manual backfill).
  *

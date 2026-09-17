@@ -33,8 +33,9 @@ The full plan lives in [`docs/architecture.md`](docs/architecture.md).
   `calories` field. Type one in yourself, or turn on "Estimate calories
   automatically" on the Goals screen to have it filled in the background —
   never blocks the save — via a Supabase Edge Function
-  (`supabase/functions/estimate-calories`) that proxies to Claude Haiku 4.5;
-  the Anthropic key is a Supabase secret, never shipped in the app. A local
+  (`supabase/functions/estimate-calories`) that proxies to OpenAI
+  (`gpt-4o-mini` by default, overridable via the `OPENAI_MODEL` secret); the
+  OpenAI key is a Supabase secret, never shipped in the app. A local
   cache (`calorie_cache`) avoids repeat lookups for the same text. Off by
   default; see [Supabase setup, step 6](docs/supabase-setup.md) to turn it
   on. The Meals tab shows a daily-average headline plus a per-meal-type
