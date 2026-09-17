@@ -81,7 +81,9 @@ export function useMeals() {
 
       // No manual value + the user opted in: best-effort background fill.
       if (calories == null && goals.autoCalories) {
-        void enrichMealCalories(db, id, input.text);
+        void enrichMealCalories(db, id, input.text).then((r) => {
+          if (!r.filled) console.info(`[nutrition] not filled: ${r.reason}`);
+        });
       } else if (calories == null) {
         console.info('[nutrition] skipped — autoCalories is off');
       }
@@ -111,14 +113,21 @@ export function useMeals() {
    * hammering the API, and so a free-tier rate limit fails gracefully one
    * request at a time rather than all at once.
    */
-  const backfillCalories = useCallback(async (): Promise<{ attempted: number; filled: number }> => {
+  const backfillCalories = useCallback(async (): Promise<{
+    attempted: number;
+    filled: number;
+    lastReason?: string;
+  }> => {
     const targets = meals.filter((m) => m.calories == null);
     let filled = 0;
+    let lastReason: string | undefined;
     for (const m of targets) {
-      if (await enrichMealCalories(db, m.id, m.text)) filled += 1;
+      const r = await enrichMealCalories(db, m.id, m.text);
+      if (r.filled) filled += 1;
+      else lastReason = r.reason;
     }
     await refresh();
-    return { attempted: targets.length, filled };
+    return { attempted: targets.length, filled, lastReason };
   }, [db, meals, refresh]);
 
   return { meals, loading, addMeal, removeMeal, refresh, backfillCalories };

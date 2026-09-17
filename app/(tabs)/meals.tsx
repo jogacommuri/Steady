@@ -30,8 +30,15 @@ export default function MealsScreen() {
   const runBackfill = async () => {
     setBackfilling(true);
     try {
-      const { attempted, filled } = await backfillCalories();
-      showToast(filled > 0 ? `Estimated ${filled} of ${attempted}` : 'No estimates found');
+      const { attempted, filled, lastReason } = await backfillCalories();
+      if (attempted === 0) {
+        showToast('Nothing to estimate');
+      } else if (filled > 0) {
+        showToast(`Estimated ${filled} of ${attempted}`);
+      } else {
+        // Show *why* right in the toast — no terminal access needed to see it.
+        showToast(lastReason ? `0 of ${attempted} — ${lastReason}` : `0 of ${attempted} filled`);
+      }
     } finally {
       setBackfilling(false);
     }
