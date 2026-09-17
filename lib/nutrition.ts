@@ -27,14 +27,28 @@ export async function estimateCalories(text: string): Promise<number | null> {
     const res = await fetch(`${ENDPOINT}?query=${encodeURIComponent(query)}`, {
       headers: { 'X-Api-Key': API_KEY },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Silent to the user by design (see file comment) — but worth a trace in
+      // the Metro/dev console, since a bad key or rate limit otherwise looks
+      // identical to "the API just didn't find anything."
+      console.warn(`[nutrition] ${res.status} ${res.statusText} for query: "${query}"`);
+      return null;
+    }
 
     const items = (await res.json()) as NutritionItem[];
-    if (!Array.isArray(items) || items.length === 0) return null;
+    if (!Array.isArray(items) || items.length === 0) {
+      console.warn(`[nutrition] no items returned for query: "${query}"`);
+      return null;
+    }
 
     const total = items.reduce((sum, item) => sum + (typeof item.calories === 'number' ? item.calories : 0), 0);
-    return total > 0 ? Math.round(total) : null;
-  } catch {
+    if (total <= 0) {
+      console.warn(`[nutrition] items returned but no calorie data for query: "${query}"`, items);
+      return null;
+    }
+    return Math.round(total);
+  } catch (e) {
+    console.warn('[nutrition] request failed:', e instanceof Error ? e.message : e);
     return null;
   }
 }

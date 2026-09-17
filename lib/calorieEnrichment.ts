@@ -24,9 +24,12 @@ export async function enrichMealCalories(db: SQLiteDatabase, mealId: string, tex
   );
 
   let calories = cached?.calories ?? null;
-  if (calories == null) {
+  if (calories != null) {
+    console.info(`[nutrition] cache hit for "${text}": ${calories} kcal`);
+  } else {
     calories = await estimateCalories(text);
     if (calories != null) {
+      console.info(`[nutrition] estimated "${text}": ${calories} kcal`);
       await db.runAsync(
         'INSERT OR REPLACE INTO calorie_cache (text_key, calories, cached_at) VALUES (?, ?, ?)',
         [key, calories, nowIso()]

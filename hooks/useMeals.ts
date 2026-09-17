@@ -82,6 +82,8 @@ export function useMeals() {
       // No manual value + the user opted in: best-effort background fill.
       if (calories == null && goals.autoCalories) {
         void enrichMealCalories(db, id, input.text);
+      } else if (calories == null) {
+        console.info('[nutrition] skipped — autoCalories is off');
       }
     },
     [db, refresh, goals.autoCalories]
