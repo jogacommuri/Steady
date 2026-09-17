@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DetailHeader } from '@/components/DetailHeader';
 import { EntryForm, Field, TextField } from '@/components/EntryForm';
 import { useSyncStatus } from '@/components/SyncProvider';
-import { OptionChips, PrimaryButton, Rule } from '@/components/ui';
+import { OptionChips, PrimaryButton, Rule, SecondaryButton } from '@/components/ui';
 import { linkEmail, sendSignInCode, signOut, verifyCode } from '@/lib/supabase';
 import { spacing, theme } from '@/theme/colors';
 import { weight } from '@/theme/typography';
@@ -19,7 +19,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function AccountScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { account } = useSyncStatus();
+  const { account, status, lastError, sync } = useSyncStatus();
 
   const [mode, setMode] = useState<Mode>('link');
   const [step, setStep] = useState<Step>('email');
@@ -180,6 +180,18 @@ export default function AccountScreen() {
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
       >
+        {account.configured && status === 'error' ? (
+          <View style={styles.syncErrorBlock}>
+            <Text style={[weight('semibold'), styles.h]}>Sync isn't working</Text>
+            <Text style={[weight('medium'), styles.p]}>
+              {lastError ?? 'The last push or pull to Supabase failed.'} Your entries are still safe on this
+              device — they'll push up once this is fixed.
+            </Text>
+            <View style={{ marginTop: spacing.md }}>
+              <SecondaryButton label="Retry sync" onPress={sync} />
+            </View>
+          </View>
+        ) : null}
         {busy ? (
           <View style={{ paddingTop: spacing.md, alignItems: 'flex-start', paddingHorizontal: spacing.lg }}>
             <ActivityIndicator color={theme.colors.accent} />
@@ -205,4 +217,5 @@ const styles = StyleSheet.create({
   hint: { fontSize: 11, lineHeight: 16, color: theme.colors.textMuted, marginTop: spacing.sm },
   footnote: { fontSize: 11.5, lineHeight: 16, color: theme.colors.textFaint },
   notice: { fontSize: 13, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  syncErrorBlock: { padding: spacing.lg, borderBottomWidth: 2, borderBottomColor: theme.colors.border, gap: spacing.xs },
 });

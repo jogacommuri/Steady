@@ -26,6 +26,8 @@ export type SyncStatus = 'disabled' | 'idle' | 'syncing' | 'error';
 
 interface SyncContextValue {
   status: SyncStatus;
+  /** Set whenever status is 'error' — a push/pull failure otherwise had no visible trace at all. */
+  lastError: string | null;
   account: AccountInfo;
   /** Trigger a manual push+pull. */
   sync: () => void;
@@ -41,6 +43,7 @@ const initialAccount: AccountInfo = {
 
 const SyncContext = createContext<SyncContextValue>({
   status: 'disabled',
+  lastError: null,
   account: initialAccount,
   sync: () => undefined,
 });
@@ -67,6 +70,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SyncStatus>(
     isSupabaseConfigured ? 'idle' : 'disabled'
   );
+  const [lastError, setLastError] = useState<string | null>(null);
   const [account, setAccount] = useState<AccountInfo>(initialAccount);
 
   // Coalesce overlapping sync requests into one in-flight run plus one rerun.
@@ -85,8 +89,11 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       const applied = await engine.syncAll();
       if (applied > 0) syncBus.emitRemoteChange();
       setStatus('idle');
-    } catch {
+      setLastError(null);
+    } catch (e) {
+      console.warn('[sync] push/pull failed:', e);
       setStatus('error');
+      setLastError(e instanceof Error ? e.message : String(e));
     } finally {
       running.current = false;
       if (pending.current) {
@@ -119,8 +126,12 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       if (!user) {
         try {
           await ensureSession();
-        } catch {
-          if (!cancelled) setStatus('error');
+        } catch (e) {
+          console.warn('[sync] re-establishing session failed:', e);
+          if (!cancelled) {
+            setStatus('error');
+            setLastError(e instanceof Error ? e.message : String(e));
+          }
         }
         return;
       }
@@ -152,9 +163,11 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       try {
         const session = await ensureSession();
         await handleSession(session);
-      } catch {
+      } catch (e) {
+        console.warn('[sync] initial sign-in failed:', e);
         if (!cancelled) {
           setStatus('error');
+          setLastError(e instanceof Error ? e.message : String(e));
           setAccount((a) => ({ ...a, loading: false }));
         }
       }
@@ -193,8 +206,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   }, [engine, runSync]);
 
   const value = useMemo<SyncContextValue>(
-    () => ({ status, account, sync: () => void runSync() }),
-    [status, account, runSync]
+    () => ({ status, lastError, account, sync: () => void runSync() }),
+    [status, lastError, account, runSync]
   );
 
   return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;
