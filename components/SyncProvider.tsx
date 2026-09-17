@@ -59,7 +59,7 @@ const DEBOUNCE_MS = 800;
 export function SyncProvider({ children }: { children: ReactNode }) {
   const db = useSQLiteContext();
 
-  const engineRef = useRef<SyncEngine>();
+  const engineRef = useRef<SyncEngine | null>(null);
   if (!engineRef.current) engineRef.current = new SyncEngine(db);
   // Assigned just above, so it is always defined here.
   const engine = engineRef.current!;

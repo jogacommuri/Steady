@@ -1,11 +1,11 @@
 import { Link, Tabs } from 'expo-router';
-import { Pressable, Text } from 'react-native';
+import { Pressable, Text, type ColorValue } from 'react-native';
 
 import { spacing } from '@/theme/colors';
 import { useTheme } from '@/theme/useTheme';
 
 /** Emoji tab icons keep Phase 1 dependency-free; swap for a vector icon set later. */
-function TabIcon({ glyph, color }: { glyph: string; color: string }) {
+function TabIcon({ glyph, color }: { glyph: string; color: ColorValue }) {
   return <Text style={{ fontSize: 20, color }}>{glyph}</Text>;
 }
 
