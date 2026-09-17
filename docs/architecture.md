@@ -149,4 +149,4 @@ revisiting if data grows.
 - [ ] Personal use only, or App Store distribution eventually?
 - [x] Single device, or sync across your own phone + tablet? → **Cross-device**,
   via anonymous → link-email accounts (see Auth above).
-- [ ] Keep Supabase, or prefer Firebase given any existing familiarity?
+- [x] Keep Supabase, or prefer Firebase? → **Supabase** (already the backend).
