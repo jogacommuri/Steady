@@ -10,7 +10,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DATABASE_NAME = 'steady.db';
 
-const TARGET_USER_VERSION = 2;
+const TARGET_USER_VERSION = 3;
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA journal_mode = WAL;');
@@ -77,6 +77,30 @@ export async function migrate(db: SQLiteDatabase): Promise<void> {
       );
     `);
     version = 2;
+  }
+
+  if (version < 3) {
+    // Goals (target weight / workouts-per-week / minutes-per-week /
+    // meals-per-day) are a single row, kept device-local: there's no Supabase
+    // table for them yet, so unlike the trackers above they don't go through
+    // pending_sync / the sync engine. Seeded once with the prototype's
+    // defaults; the Goals screen only ever updates this one row.
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS goals (
+        id                 TEXT PRIMARY KEY NOT NULL,
+        target_weight      REAL NOT NULL,
+        workouts_per_week  INTEGER NOT NULL,
+        minutes_per_week   INTEGER NOT NULL,
+        meals_per_day      INTEGER NOT NULL,
+        updated_at         TEXT NOT NULL
+      );
+    `);
+    await db.runAsync(
+      `INSERT OR IGNORE INTO goals (id, target_weight, workouts_per_week, minutes_per_week, meals_per_day, updated_at)
+       VALUES ('local', 74, 4, 150, 3, ?)`,
+      [new Date().toISOString()]
+    );
+    version = 3;
   }
 
   // Future migrations append here, bumping `version` each step.

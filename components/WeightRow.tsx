@@ -1,73 +1,44 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { spacing, theme } from '@/theme/colors';
+import { weight } from '@/theme/typography';
 import { formatDay } from '@/lib/dates';
 import type { Weight } from '@/lib/types';
-import { spacing } from '@/theme/colors';
-import { useTheme } from '@/theme/useTheme';
 
-import { Card, DeleteButton } from './ui';
+import { DeleteButton, RuleLight } from './ui';
 
 export function WeightRow({
-  weight,
+  weightEntry,
   delta,
   onDelete,
 }: {
-  weight: Weight;
+  weightEntry: Weight;
   /** Change vs. the next-older entry, if any. */
   delta?: number | null;
   onDelete: (id: string) => void;
 }) {
-  const { colors } = useTheme();
-  const deltaColor =
-    delta == null || delta === 0
-      ? colors.textMuted
-      : delta < 0
-        ? colors.sage
-        : colors.gold;
-  const deltaLabel =
-    delta == null || delta === 0
-      ? null
-      : `${delta > 0 ? '+' : ''}${delta.toFixed(1)}`;
+  const deltaLabel = delta == null || Math.abs(delta) < 0.05 ? '—' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)}`;
+  const deltaColor = delta != null && delta < 0 ? theme.colors.accentText : theme.colors.textMuted;
 
   return (
-    <Card style={styles.card}>
-      <View style={styles.body}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.value, { color: colors.clay }]}>
-            {weight.value.toFixed(1)}
-            <Text style={[styles.unit, { color: colors.textMuted }]}> kg</Text>
-          </Text>
-          {deltaLabel ? (
-            <Text style={[styles.delta, { color: deltaColor }]}>
-              {deltaLabel}
-            </Text>
-          ) : null}
-        </View>
-        <Text style={[styles.meta, { color: colors.textMuted }]}>
-          {formatDay(weight.date)}
-          {weight.note ? ` · ${weight.note}` : ''}
+    <View>
+      <View style={styles.row}>
+        <Text style={[weight('bold'), styles.value]}>{weightEntry.value.toFixed(1)}</Text>
+        <Text style={[weight('semibold'), styles.delta, { color: deltaColor }]}>{deltaLabel}</Text>
+        <Text style={[weight('medium'), styles.meta]}>
+          {formatDay(weightEntry.date)}
+          {weightEntry.note ? ` · ${weightEntry.note}` : ''}
         </Text>
+        <DeleteButton onPress={() => onDelete(weightEntry.id)} />
       </View>
-      <DeleteButton onPress={() => onDelete(weight.id)} />
-    </Card>
+      <RuleLight />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  body: { flex: 1, gap: spacing.xs },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: spacing.md,
-  },
-  value: { fontSize: 22, fontWeight: '700' },
-  unit: { fontSize: 14, fontWeight: '500' },
-  delta: { fontSize: 14, fontWeight: '600' },
-  meta: { fontSize: 12 },
+  row: { flexDirection: 'row', gap: spacing.md, paddingVertical: 14, alignItems: 'baseline' },
+  value: { fontSize: 20, letterSpacing: -0.4, width: 74, color: theme.colors.text },
+  delta: { fontSize: 12, width: 48 },
+  meta: { flex: 1, fontSize: 12, color: theme.colors.textMuted },
 });

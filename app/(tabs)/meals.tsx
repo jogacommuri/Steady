@@ -1,80 +1,80 @@
-import { useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { EntryForm, Field, TextField } from '@/components/EntryForm';
+import { AppHeader } from '@/components/AppHeader';
 import { MealRow } from '@/components/MealRow';
-import { ChipGroup, EmptyState } from '@/components/ui';
+import { EmptyState, Rule, RuleLight, SegmentedRow } from '@/components/ui';
 import { useMeals } from '@/hooks/useMeals';
-import { nowTime, today } from '@/lib/dates';
+import { formatDay, today } from '@/lib/dates';
 import { MEAL_TYPES, type MealType } from '@/lib/types';
-import { spacing } from '@/theme/colors';
-import { useTheme } from '@/theme/useTheme';
+import { spacing, theme } from '@/theme/colors';
+import { weight } from '@/theme/typography';
+
+const FILTERS = ['all', ...MEAL_TYPES] as const;
+type Filter = (typeof FILTERS)[number];
 
 export default function MealsScreen() {
-  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { meals, addMeal, removeMeal } = useMeals();
+  const { meals, removeMeal } = useMeals();
+  const [filter, setFilter] = useState<Filter>('all');
+  const todayStr = today();
 
-  const [mealType, setMealType] = useState<MealType>('breakfast');
-  const [text, setText] = useState('');
-
-  const submit = async () => {
-    await addMeal({
-      date: today(),
-      mealType,
-      time: nowTime(),
-      text,
-    });
-    setText('');
-  };
+  const groups = useMemo(() => {
+    const filtered = filter === 'all' ? meals : meals.filter((m) => m.mealType === (filter as MealType));
+    const out: { date: string; label: string; items: typeof meals }[] = [];
+    for (const m of filtered) {
+      const last = out[out.length - 1];
+      const label = m.date === todayStr ? 'Today' : formatDay(m.date);
+      if (last && last.date === m.date) last.items.push(m);
+      else out.push({ date: m.date, label, items: [m] });
+    }
+    return out;
+  }, [meals, filter, todayStr]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <FlatList
-        data={meals}
-        keyExtractor={(m) => m.id}
-        renderItem={({ item }) => (
-          <MealRow meal={item} onDelete={removeMeal} />
-        )}
-        contentContainerStyle={{
-          padding: spacing.lg,
-          paddingBottom: insets.bottom + spacing.xl,
-          gap: spacing.md,
-        }}
-        ListHeaderComponent={
-          <View style={{ marginBottom: spacing.md }}>
-            <EntryForm accent={colors.sage} onSubmit={submit} disabled={!text.trim()}>
-              <Field label="Meal">
-                <ChipGroup
-                  options={MEAL_TYPES}
-                  value={mealType}
-                  accent={colors.sage}
-                  onChange={setMealType}
-                />
-              </Field>
-              <Field label="What did you eat?">
-                <TextField
-                  value={text}
-                  onChangeText={setText}
-                  placeholder="e.g. oats, berries, coffee"
-                  multiline
-                />
-              </Field>
-            </EntryForm>
+    <View style={styles.container}>
+      <AppHeader />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}>
+        <View style={styles.titleBlock}>
+          <Text style={[weight('bold'), styles.title]}>Meals</Text>
+          <Text style={[weight('medium'), styles.subtitle]}>{meals.length} entries</Text>
+        </View>
+        <Rule />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <SegmentedRow options={FILTERS} value={filter} onChange={setFilter} scroll />
+        </ScrollView>
+
+        {groups.length === 0 ? (
+          <View style={{ paddingHorizontal: spacing.lg }}>
+            <EmptyState title="No meals logged yet" subtitle="Log one from the + button below." />
           </View>
-        }
-        ListEmptyComponent={
-          <EmptyState
-            title="No meals logged yet"
-            subtitle="Add your first meal above — it saves offline instantly."
-          />
-        }
-      />
+        ) : (
+          groups.map((g) => (
+            <View key={g.date}>
+              <View style={styles.groupHeader}>
+                <Text style={[weight('semibold'), styles.groupLabel]}>{g.label}</Text>
+              </View>
+              <RuleLight />
+              <View style={styles.list}>
+                {g.items.map((m) => (
+                  <MealRow key={m.id} meal={m} onDelete={removeMeal} />
+                ))}
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  titleBlock: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md },
+  title: { fontSize: 32, letterSpacing: -0.9, textTransform: 'uppercase', color: theme.colors.text },
+  subtitle: { fontSize: 12, color: theme.colors.textMuted, marginTop: spacing.xs },
+  groupHeader: { backgroundColor: theme.colors.surface, paddingHorizontal: spacing.lg, paddingVertical: 12 },
+  groupLabel: { fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: theme.colors.textMuted },
+  list: { paddingHorizontal: spacing.lg },
 });

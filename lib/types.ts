@@ -58,3 +58,14 @@ export const WORKOUT_TYPES: WorkoutType[] = [
   'walk',
   'other',
 ];
+
+/**
+ * Targets, edited on the Goals screen. Device-local (see `lib/db.ts` — no
+ * Supabase table yet), a single row rather than a synced collection.
+ */
+export interface Goals {
+  targetWeight: number; // kg
+  workoutsPerWeek: number;
+  minutesPerWeek: number;
+  mealsPerDay: number;
+}

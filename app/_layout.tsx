@@ -7,49 +7,35 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SyncProvider } from '@/components/SyncProvider';
 import { DATABASE_NAME, migrate } from '@/lib/db';
-import { useTheme } from '@/theme/useTheme';
+import { theme } from '@/theme/colors';
+import { useAppFonts } from '@/theme/typography';
 
 function Loading() {
-  const { colors } = useTheme();
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.background,
-      }}
-    >
-      <ActivityIndicator color={colors.sage} />
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background }}>
+      <ActivityIndicator color={theme.colors.accent} />
     </View>
   );
 }
 
 export default function RootLayout() {
-  const { dark, colors } = useTheme();
+  const fontsLoaded = useAppFonts();
+
+  if (!fontsLoaded) return <Loading />;
+
   return (
     <SafeAreaProvider>
       <Suspense fallback={<Loading />}>
-        <SQLiteProvider
-          databaseName={DATABASE_NAME}
-          onInit={migrate}
-          useSuspense
-        >
-          <StatusBar style={dark ? 'light' : 'dark'} />
+        <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrate} useSuspense>
+          <StatusBar style="dark" />
           <SyncProvider>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" />
-              <Stack.Screen
-                name="account"
-                options={{
-                  presentation: 'modal',
-                  headerShown: true,
-                  title: 'Account & Sync',
-                  headerStyle: { backgroundColor: colors.background },
-                  headerTitleStyle: { color: colors.text },
-                  headerTintColor: colors.plum,
-                }}
-              />
+              <Stack.Screen name="day" />
+              <Stack.Screen name="goals" />
+              <Stack.Screen name="progress" />
+              <Stack.Screen name="add" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="account" options={{ presentation: 'modal' }} />
             </Stack>
           </SyncProvider>
         </SQLiteProvider>

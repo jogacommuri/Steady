@@ -1,18 +1,15 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { EntryForm, Field, PrimaryButton, TextField } from '@/components/EntryForm';
-import { Card, ChipGroup } from '@/components/ui';
+import { DetailHeader } from '@/components/DetailHeader';
+import { EntryForm, Field, TextField } from '@/components/EntryForm';
 import { useSyncStatus } from '@/components/SyncProvider';
-import {
-  linkEmail,
-  sendSignInCode,
-  signOut,
-  verifyCode,
-} from '@/lib/supabase';
-import { spacing } from '@/theme/colors';
-import { useTheme } from '@/theme/useTheme';
+import { OptionChips, PrimaryButton, Rule } from '@/components/ui';
+import { linkEmail, sendSignInCode, signOut, verifyCode } from '@/lib/supabase';
+import { spacing, theme } from '@/theme/colors';
+import { weight } from '@/theme/typography';
 
 type Mode = 'link' | 'join';
 type Step = 'email' | 'code';
@@ -20,7 +17,7 @@ type Step = 'email' | 'code';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function AccountScreen() {
-  const { colors } = useTheme();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { account } = useSyncStatus();
 
@@ -31,8 +28,6 @@ export default function AccountScreen() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const accent = colors.plum;
 
   const reset = () => {
     setStep('email');
@@ -80,148 +75,127 @@ export default function AccountScreen() {
   const body = () => {
     if (!account.configured) {
       return (
-        <Card>
-          <Text style={[styles.h, { color: colors.text }]}>Sync is off</Text>
-          <Text style={[styles.p, { color: colors.textMuted }]}>
-            Steady is running local-only. Add your Supabase keys to a `.env`
-            file (see `.env.example`) to enable cloud backup and multi-device
-            sync.
+        <View style={styles.infoBlock}>
+          <Text style={[weight('semibold'), styles.h]}>Sync is off</Text>
+          <Text style={[weight('medium'), styles.p]}>
+            Steady is running local-only. Add your Supabase keys to a `.env` file (see `.env.example`) to enable
+            cloud backup and multi-device sync.
           </Text>
-        </Card>
+        </View>
       );
     }
 
     if (account.loading) {
       return (
         <View style={{ paddingVertical: spacing.xxl }}>
-          <ActivityIndicator color={accent} />
+          <ActivityIndicator color={theme.colors.accent} />
         </View>
       );
     }
 
     if (account.email) {
       return (
-        <Card style={{ gap: spacing.md }}>
-          <Text style={[styles.h, { color: colors.text }]}>
-            Synced as {account.email}
+        <View style={styles.infoBlock}>
+          <Text style={[weight('semibold'), styles.h]}>Synced as {account.email}</Text>
+          <Text style={[weight('medium'), styles.p]}>
+            Your data is available on any device signed in with this email. Sign in with the same address on your
+            other devices to sync them.
           </Text>
-          <Text style={[styles.p, { color: colors.textMuted }]}>
-            Your data is available on any device signed in with this email. Sign
-            in with the same address on your other devices to sync them.
-          </Text>
-          <PrimaryButton
-            label="Sign out"
-            accent={colors.danger}
-            disabled={busy}
-            onPress={() => run(() => signOut())}
-          />
-        </Card>
+          <View style={{ marginTop: spacing.md }}>
+            <PrimaryButton label="Sign out" onPress={() => run(() => signOut())} disabled={busy} />
+          </View>
+        </View>
       );
     }
 
-    // Anonymous (device-only) account.
     return (
-      <View style={{ gap: spacing.lg }}>
-        <Card>
-          <Text style={[styles.h, { color: colors.text }]}>
-            Backed up to this device
+      <View>
+        <View style={styles.infoBlock}>
+          <Text style={[weight('semibold'), styles.h]}>Backed up to this device</Text>
+          <Text style={[weight('medium'), styles.p]}>
+            Entries are backed up under a private device account. To use Steady on another device, link an email
+            here — then join with it on the other device.
           </Text>
-          <Text style={[styles.p, { color: colors.textMuted }]}>
-            Your entries are backed up under a private device account. To use
-            Steady on another device, link an email here — then sign in with it
-            on the other device.
+        </View>
+        <Rule />
+
+        <View style={styles.formBlock}>
+          <EntryForm
+            onSubmit={step === 'email' ? sendCode : verify}
+            disabled={busy || (step === 'email' ? !EMAIL_RE.test(email.trim()) : code.trim().length < 4)}
+            submitLabel={
+              step === 'email' ? (mode === 'link' ? 'Send link code' : 'Send sign-in code') : 'Verify code'
+            }
+          >
+            <Field label="What do you want to do?">
+              <OptionChips
+                options={['link', 'join'] as const}
+                value={mode}
+                onChange={(m) => {
+                  setMode(m);
+                  reset();
+                }}
+              />
+              <Text style={[weight('medium'), styles.hint]}>
+                {mode === 'link'
+                  ? 'Link an email to this device so others can join it.'
+                  : 'Join an account you already linked on another device.'}
+              </Text>
+            </Field>
+
+            <Field label="Link an email">
+              <TextField value={email} onChangeText={setEmail} placeholder="you@example.com" keyboardType="email-address" />
+            </Field>
+
+            {step === 'code' ? (
+              <Field label="6-digit code">
+                <TextField value={code} onChangeText={setCode} placeholder="6-digit code" keyboardType="number-pad" letterSpaced />
+              </Field>
+            ) : null}
+          </EntryForm>
+
+          <Text style={[weight('medium'), styles.footnote]}>
+            Sync is last-write-wins: local writes queue and push, remote changes pull down, deletes propagate as
+            tombstones.
           </Text>
-        </Card>
-
-        <EntryForm
-          accent={accent}
-          submitLabel={
-            step === 'email'
-              ? mode === 'link'
-                ? 'Send link code'
-                : 'Send sign-in code'
-              : 'Verify code'
-          }
-          disabled={
-            busy ||
-            (step === 'email' ? !EMAIL_RE.test(email.trim()) : code.trim().length < 4)
-          }
-          onSubmit={step === 'email' ? sendCode : verify}
-        >
-          <Field label="What do you want to do?">
-            <ChipGroup<Mode>
-              options={['link', 'join']}
-              value={mode}
-              accent={accent}
-              onChange={(m) => {
-                setMode(m);
-                reset();
-              }}
-            />
-            <Text style={[styles.hint, { color: colors.textMuted }]}>
-              {mode === 'link'
-                ? 'Link an email to this device so others can join it.'
-                : 'Join an account you already linked on another device.'}
-            </Text>
-          </Field>
-
-          <Field label="Email">
-            <TextField
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              keyboardType="email-address"
-            />
-          </Field>
 
           {step === 'code' ? (
-            <Field label="6-digit code">
-              <TextField
-                value={code}
-                onChangeText={setCode}
-                placeholder="123456"
-                keyboardType="number-pad"
-              />
-            </Field>
+            <View style={{ marginTop: spacing.md }}>
+              <PrimaryButton label="Use a different email" onPress={reset} disabled={busy} />
+            </View>
           ) : null}
-        </EntryForm>
-
-        {step === 'code' ? (
-          <PrimaryButton
-            label="Use a different email"
-            accent={colors.surfaceAlt}
-            disabled={busy}
-            onPress={reset}
-          />
-        ) : null}
+        </View>
       </View>
     );
   };
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={{
-        padding: spacing.lg,
-        paddingBottom: insets.bottom + spacing.xl,
-        gap: spacing.md,
-      }}
-    >
-      {busy ? <ActivityIndicator color={accent} /> : null}
-      {notice ? (
-        <Text style={[styles.notice, { color: colors.sage }]}>{notice}</Text>
-      ) : null}
-      {error ? (
-        <Text style={[styles.notice, { color: colors.danger }]}>{error}</Text>
-      ) : null}
-      {body()}
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <DetailHeader title="Account & sync" onBack={() => router.back()} />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}>
+        {busy ? (
+          <View style={{ paddingTop: spacing.md, alignItems: 'flex-start', paddingHorizontal: spacing.lg }}>
+            <ActivityIndicator color={theme.colors.accent} />
+          </View>
+        ) : null}
+        {notice ? (
+          <Text style={[weight('semibold'), styles.notice, { color: theme.colors.text }]}>{notice}</Text>
+        ) : null}
+        {error ? (
+          <Text style={[weight('semibold'), styles.notice, { color: theme.colors.accentText }]}>{error}</Text>
+        ) : null}
+        {body()}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  h: { fontSize: 16, fontWeight: '700', marginBottom: spacing.xs },
-  p: { fontSize: 14, lineHeight: 20 },
-  hint: { fontSize: 12, lineHeight: 16, marginTop: spacing.xs },
-  notice: { fontSize: 14, fontWeight: '600' },
+  infoBlock: { padding: spacing.lg, backgroundColor: theme.colors.surface, gap: spacing.xs },
+  h: { fontSize: 13, color: theme.colors.text },
+  p: { fontSize: 13, lineHeight: 19, color: theme.colors.textMuted },
+  formBlock: { padding: spacing.lg, gap: spacing.md },
+  hint: { fontSize: 11, lineHeight: 16, color: theme.colors.textMuted, marginTop: spacing.sm },
+  footnote: { fontSize: 11.5, lineHeight: 16, color: theme.colors.textFaint },
+  notice: { fontSize: 13, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
 });

@@ -1,57 +1,35 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { spacing, theme } from '@/theme/colors';
+import { weight } from '@/theme/typography';
 import { formatDay } from '@/lib/dates';
 import type { Workout } from '@/lib/types';
-import { spacing } from '@/theme/colors';
-import { useTheme } from '@/theme/useTheme';
 
-import { Card, DeleteButton } from './ui';
+import { DeleteButton, RuleLight } from './ui';
 
-export function WorkoutRow({
-  workout,
-  onDelete,
-}: {
-  workout: Workout;
-  onDelete: (id: string) => void;
-}) {
-  const { colors } = useTheme();
+export function WorkoutRow({ workout, onDelete }: { workout: Workout; onDelete: (id: string) => void }) {
   return (
-    <Card style={styles.card}>
-      <View style={styles.body}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.type, { color: colors.plum }]}>
-            {workout.workoutType}
-          </Text>
-          <Text style={[styles.meta, { color: colors.textMuted }]}>
+    <View>
+      <View style={styles.row}>
+        <View style={styles.metaCol}>
+          <Text style={[weight('semibold'), styles.type]}>{workout.workoutType}</Text>
+          <Text style={[weight('medium'), styles.meta]}>
             {formatDay(workout.date)}
             {workout.duration ? ` · ${workout.duration} min` : ''}
           </Text>
         </View>
-        {workout.text ? (
-          <Text style={[styles.text, { color: colors.text }]}>
-            {workout.text}
-          </Text>
-        ) : null}
+        <Text style={[weight('medium'), styles.text]}>{workout.text}</Text>
+        <DeleteButton onPress={() => onDelete(workout.id)} />
       </View>
-      <DeleteButton onPress={() => onDelete(workout.id)} />
-    </Card>
+      <RuleLight />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  body: { flex: 1, gap: spacing.xs },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-  },
-  type: { fontSize: 14, fontWeight: '700', textTransform: 'capitalize' },
-  meta: { fontSize: 12 },
-  text: { fontSize: 15, lineHeight: 20 },
+  row: { flexDirection: 'row', gap: spacing.md, paddingVertical: 14, alignItems: 'flex-start' },
+  metaCol: { width: 74 },
+  type: { fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: theme.colors.accentText },
+  meta: { fontSize: 11, color: theme.colors.textFaint, marginTop: 6 },
+  text: { flex: 1, fontSize: 14, lineHeight: 19, color: theme.colors.text },
 });

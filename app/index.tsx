@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 
-/** Land on the Meals tab by default. */
+/** Land on the Today tab by default. */
 export default function Index() {
-  return <Redirect href="/meals" />;
+  return <Redirect href="/today" />;
 }

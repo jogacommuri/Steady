@@ -1,96 +1,79 @@
 /**
- * Steady design tokens — the sage / clay / plum / gold palette from the
- * original artifact, ported for React Native with light + dark variants.
+ * Steady design tokens — the Modernist system (Archivo, red accent, square
+ * corners, hard 2px rules), ported for React Native.
  *
- * Consume via `useTheme()` (theme/useTheme.ts) so screens react to the
- * device colour scheme automatically.
+ * The system is a mono-accent scheme: there is one accent (red), used
+ * sparingly for the primary action, small emphasis and the weight trend dot.
+ * Meals / weight / workouts no longer carry separate hues — every "type"
+ * label (meal type, workout type) reads in `accentText` (accent-700), and
+ * everything else is ink-on-ground. Consume via `useTheme()`.
  */
 
 export type ThemeColors = {
-  // surfaces
   background: string;
   surface: string;
-  surfaceAlt: string;
-  border: string;
+  border: string; // 2px structural rule
+  borderLight: string; // 1px row rule
 
-  // text
   text: string;
   textMuted: string;
+  textFaint: string;
   textInverse: string;
 
-  // brand accents
-  sage: string; // meals
-  clay: string; // weight
-  plum: string; // workouts
-  gold: string; // highlights / deltas
+  accent: string; // solid fills, icons, large display type
+  accentText: string; // accent-700 — body-sized red text (links, CTAs, deltas)
+  accentSoft: string; // accent-100 — tinted fill
 
-  // feedback
   danger: string;
 };
 
-const palette = {
-  sage: '#7C9A82',
-  sageDark: '#9BB8A1',
-  clay: '#C08457',
-  clayDark: '#D69B6E',
-  plum: '#7A5C7E',
-  plumDark: '#A484A8',
-  gold: '#D9A441',
-  goldDark: '#E8BE6A',
-  danger: '#C0524A',
-  dangerDark: '#E08078',
+const neutral = {
+  100: '#f8f4f4',
+  200: '#eae7e7',
+  300: '#d7d3d3',
+  400: '#bab6b6',
+  500: '#9b9797',
+  600: '#7d7979',
+  700: '#605d5d',
+  800: '#444141',
+  900: '#2d2b2b',
 };
 
-export const lightTheme: ThemeColors = {
-  background: '#F6F3EE',
-  surface: '#FFFFFF',
-  surfaceAlt: '#EFEAE1',
-  border: '#E0D9CC',
-
-  text: '#2B2A28',
-  textMuted: '#6E6A63',
-  textInverse: '#FFFFFF',
-
-  sage: palette.sage,
-  clay: palette.clay,
-  plum: palette.plum,
-  gold: palette.gold,
-
-  danger: palette.danger,
+const accentRamp = {
+  100: '#fff2ef',
+  200: '#ffe0d9',
+  300: '#ffc4b8',
+  400: '#ff9783',
+  500: '#ff563c',
+  600: '#dd2b0f',
+  700: '#ae1800',
+  800: '#7c1405',
+  900: '#4d170e',
 };
 
-export const darkTheme: ThemeColors = {
-  background: '#1B1A18',
-  surface: '#26241F',
-  surfaceAlt: '#302D27',
-  border: '#3B382F',
+const themeColors: ThemeColors = {
+  background: '#f3f2f2',
+  surface: '#eae9e9',
+  border: 'rgba(32,30,29,0.4)',
+  borderLight: neutral[300],
 
-  text: '#EFEAE1',
-  textMuted: '#A8A198',
-  textInverse: '#1B1A18',
+  text: '#201e1d',
+  textMuted: neutral[700],
+  textFaint: neutral[600],
+  textInverse: '#ffffff',
 
-  sage: palette.sageDark,
-  clay: palette.clayDark,
-  plum: palette.plumDark,
-  gold: palette.goldDark,
+  accent: '#ec3013',
+  accentText: accentRamp[700],
+  accentSoft: accentRamp[100],
 
-  danger: palette.dangerDark,
+  danger: accentRamp[700],
 };
 
-/** Per-tracker accent colour, keyed by domain. */
-export const accentFor = (
-  kind: 'meals' | 'weight' | 'workouts',
-  c: ThemeColors
-): string => {
-  switch (kind) {
-    case 'meals':
-      return c.sage;
-    case 'weight':
-      return c.clay;
-    case 'workouts':
-      return c.plum;
-  }
-};
+/** `theme.colors.*` — kept nested (rather than a flat export) to match `useTheme()`'s shape. */
+export const theme = { colors: themeColors };
+
+export const neutralRamp = neutral;
+export const accentRampSteps = accentRamp;
 
 export const spacing = {
   xs: 4,
@@ -101,8 +84,9 @@ export const spacing = {
   xxl: 32,
 } as const;
 
+/** Every radius in Modernist is 0 — never round a corner. */
 export const radius = {
-  sm: 8,
-  md: 12,
-  lg: 20,
+  sm: 0,
+  md: 0,
+  lg: 0,
 } as const;

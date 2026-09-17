@@ -1,58 +1,32 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { spacing, theme } from '@/theme/colors';
+import { weight } from '@/theme/typography';
 import { formatDay } from '@/lib/dates';
 import type { Meal } from '@/lib/types';
-import { spacing } from '@/theme/colors';
-import { useTheme } from '@/theme/useTheme';
 
-import { Card, DeleteButton } from './ui';
+import { DeleteButton, RuleLight } from './ui';
 
-export function MealRow({
-  meal,
-  onDelete,
-}: {
-  meal: Meal;
-  onDelete: (id: string) => void;
-}) {
-  const { colors } = useTheme();
+export function MealRow({ meal, onDelete }: { meal: Meal; onDelete: (id: string) => void }) {
   return (
-    <Card style={styles.card}>
-      <View style={styles.body}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.type, { color: colors.sage }]}>
-            {meal.mealType}
-          </Text>
-          <Text style={[styles.meta, { color: colors.textMuted }]}>
-            {formatDay(meal.date)} · {meal.time}
-          </Text>
+    <View>
+      <View style={styles.row}>
+        <View style={styles.timeCol}>
+          <Text style={[weight('semibold'), styles.type]}>{meal.mealType}</Text>
+          <Text style={[weight('medium'), styles.meta]}>{formatDay(meal.date)} · {meal.time}</Text>
         </View>
-        {meal.text ? (
-          <Text style={[styles.text, { color: colors.text }]}>{meal.text}</Text>
-        ) : null}
+        <Text style={[weight('medium'), styles.text]}>{meal.text}</Text>
+        <DeleteButton onPress={() => onDelete(meal.id)} />
       </View>
-      <DeleteButton onPress={() => onDelete(meal.id)} />
-    </Card>
+      <RuleLight />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  body: { flex: 1, gap: spacing.xs },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-  },
-  type: {
-    fontSize: 14,
-    fontWeight: '700',
-    textTransform: 'capitalize',
-  },
-  meta: { fontSize: 12 },
-  text: { fontSize: 15, lineHeight: 20 },
+  row: { flexDirection: 'row', gap: spacing.md, paddingVertical: 14, alignItems: 'flex-start' },
+  timeCol: { width: 60 },
+  type: { fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: theme.colors.accentText },
+  meta: { fontSize: 11, color: theme.colors.textFaint, marginTop: 6 },
+  text: { flex: 1, fontSize: 14, lineHeight: 19, color: theme.colors.text },
 });

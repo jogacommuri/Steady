@@ -1,61 +1,45 @@
 import { type ReactNode } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  type KeyboardTypeOptions,
-} from 'react-native';
+import { StyleSheet, Text, TextInput, View, type KeyboardTypeOptions } from 'react-native';
 
-import { radius, spacing } from '@/theme/colors';
-import { useTheme } from '@/theme/useTheme';
+import { spacing, theme } from '@/theme/colors';
+import { weight } from '@/theme/typography';
 
-import { Card } from './ui';
+import { Kicker, PrimaryButton } from './ui';
 
 /**
- * Shared building blocks for the "add entry" cards on each tab. The screens
- * compose these primitives; keeping them here matches the planned EntryForm.tsx
- * and keeps field styling consistent across trackers.
+ * Shared building blocks for the Log entry / Goals / Account forms. Modernist
+ * has no floating card for forms — sections stack flush, divided by rules —
+ * so this is a plain vertical layout, not a bordered container.
  */
 
 export function EntryForm({
-  accent,
   children,
   onSubmit,
-  submitLabel = 'Add',
+  submitLabel = 'Add entry',
   disabled,
+  footnote,
 }: {
-  accent: string;
   children: ReactNode;
   onSubmit: () => void;
   submitLabel?: string;
   disabled?: boolean;
+  footnote?: string;
 }) {
   return (
-    <Card style={{ gap: spacing.md }}>
+    <View style={{ gap: spacing.lg }}>
       {children}
-      <PrimaryButton
-        label={submitLabel}
-        accent={accent}
-        onPress={onSubmit}
-        disabled={disabled}
-      />
-    </Card>
+      <View style={{ gap: spacing.md }}>
+        <PrimaryButton label={submitLabel} onPress={onSubmit} disabled={disabled} />
+        {footnote ? <Text style={[weight('medium'), styles.footnote]}>{footnote}</Text> : null}
+      </View>
+    </View>
   );
 }
 
-export function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  const { colors } = useTheme();
+export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <View style={{ gap: spacing.xs }}>
-      <Text style={[styles.label, { color: colors.textMuted }]}>{label}</Text>
+    <View style={{ gap: spacing.xs + 2 }}>
+      <Kicker size={10}>{label}</Kicker>
       {children}
     </View>
   );
@@ -67,85 +51,50 @@ export function TextField({
   placeholder,
   keyboardType,
   multiline,
+  big,
+  letterSpaced,
 }: {
   value: string;
   onChangeText: (t: string) => void;
   placeholder?: string;
   keyboardType?: KeyboardTypeOptions;
   multiline?: boolean;
+  /** Large numeric-style entry (weight value, duration). */
+  big?: boolean;
+  /** Spaced-out digits, for the 6-digit code field. */
+  letterSpaced?: boolean;
 }) {
-  const { colors } = useTheme();
   return (
     <TextInput
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor={colors.textMuted}
+      placeholderTextColor={theme.colors.textFaint}
       keyboardType={keyboardType}
       multiline={multiline}
       style={[
+        weight(big ? 'semibold' : 'medium'),
         styles.input,
-        {
-          backgroundColor: colors.surfaceAlt,
-          borderColor: colors.border,
-          color: colors.text,
-          minHeight: multiline ? 72 : undefined,
-          textAlignVertical: multiline ? 'top' : 'center',
-        },
+        big && styles.inputBig,
+        multiline && styles.inputMultiline,
+        letterSpaced && { letterSpacing: 4 },
       ]}
     />
   );
 }
 
-export function PrimaryButton({
-  label,
-  accent,
-  onPress,
-  disabled,
-}: {
-  label: string;
-  accent: string;
-  onPress: () => void;
-  disabled?: boolean;
-}) {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      style={({ pressed }) => [
-        styles.button,
-        {
-          backgroundColor: accent,
-          opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
-        },
-      ]}
-    >
-      <Text style={[styles.buttonLabel, { color: colors.textInverse }]}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
   input: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderWidth: 2,
+    borderColor: theme.colors.text,
+    backgroundColor: '#fff',
+    color: theme.colors.text,
+    paddingHorizontal: 12,
+    paddingVertical: 13,
+    minHeight: 48,
     fontSize: 15,
   },
-  button: {
-    borderRadius: radius.sm,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  buttonLabel: { fontSize: 15, fontWeight: '700' },
+  inputBig: { fontSize: 22, minHeight: 56 },
+  inputMultiline: { minHeight: 72, textAlignVertical: 'top' },
+  footnote: { fontSize: 11.5, lineHeight: 16, color: theme.colors.textFaint },
 });

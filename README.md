@@ -17,6 +17,17 @@ The full plan lives in [`docs/architecture.md`](docs/architecture.md).
   `lib/supabase.ts`, `components/SyncProvider.tsx`) — last-write-wins push/pull
   plus realtime. **Optional:** with no Supabase env vars set, the app still
   runs exactly as Phase 2 (local-only). See [Sync setup](#sync-setup-optional).
+- ✅ **Phase 4 — Modernist reskin:** the sage/clay/plum/gold tokens are gone,
+  replaced by the Modernist design system (Archivo, red accent, square
+  corners, hard 2px rules — see `theme/colors.ts`, `theme/typography.ts`).
+  Four new screens were added: **Today** (now the default tab — summary
+  cards, goal progress bars, today's log, quick-add), **Day detail**,
+  **Goals** (target weight / workouts / minutes / meals, stored locally —
+  see `hooks/useGoals.ts`), and **Progress** (streak, consistency, 35-day
+  grid). Log entry moved out of the tracker tabs into its own screen
+  (`app/add.tsx`), opened from the tab bar's "+" or Today's quick-add row.
+  **Known trim:** Goals are device-local only (no Supabase table yet) —
+  unlike meals/weights/workouts they don't sync across devices.
 
 ## Getting started
 
@@ -79,10 +90,12 @@ full design.
 
 ## Data model
 
-Three tables — `meals`, `weights`, `workouts` — each row carrying a UUID plus
-`created_at` / `updated_at`, so the planned last-write-wins Supabase sync has
-what it needs. See `lib/db.ts` for the schema and `lib/types.ts` for the row
-shapes.
+Three synced tables — `meals`, `weights`, `workouts` — each row carrying a
+UUID plus `created_at` / `updated_at` for last-write-wins Supabase sync. A
+fourth table, `goals`, holds the single-row target-weight/workouts/minutes/
+meals record from the Goals screen; it's local-only (no `user_id`, no
+Supabase counterpart yet). See `lib/db.ts` for the schema and `lib/types.ts`
+for the row shapes.
 
 ## Notes
 
