@@ -35,6 +35,7 @@ export default function AddScreen() {
   const [date, setDate] = useState(today());
   const [mealType, setMealType] = useState<MealType>('breakfast');
   const [text, setText] = useState('');
+  const [calories, setCalories] = useState('');
   const [value, setValue] = useState('');
   const [note, setNote] = useState('');
   const [workoutType, setWorkoutType] = useState<WorkoutType>('cardio');
@@ -51,7 +52,14 @@ export default function AddScreen() {
   const submit = async () => {
     if (kind === 'meal') {
       if (!text.trim()) return;
-      await addMeal({ date, mealType, time: nowTime(), text });
+      const parsedCalories = Number.parseFloat(calories);
+      await addMeal({
+        date,
+        mealType,
+        time: nowTime(),
+        text,
+        calories: Number.isFinite(parsedCalories) && parsedCalories > 0 ? Math.round(parsedCalories) : null,
+      });
       showToast('Meal logged');
       router.replace('/meals');
     } else if (kind === 'weight') {
@@ -79,13 +87,20 @@ export default function AddScreen() {
           <EntryForm
             onSubmit={submit}
             disabled={disabled}
-            footnote="Saved to the on-device database first — it works with no connection."
+            footnote={
+              goals.autoCalories && !calories.trim()
+                ? 'Saved to the on-device database first. No calories entered — an estimate will fill in shortly if one can be found.'
+                : 'Saved to the on-device database first — it works with no connection.'
+            }
           >
             <Field label="Meal">
               <OptionChips options={MEAL_TYPES} value={mealType} onChange={setMealType} />
             </Field>
             <Field label="What did you eat?">
               <TextField value={text} onChangeText={setText} placeholder="e.g. oats, berries, coffee" />
+            </Field>
+            <Field label="Calories (optional)">
+              <TextField value={calories} onChangeText={setCalories} placeholder="e.g. 420" keyboardType="number-pad" />
             </Field>
           </EntryForm>
         ) : null}

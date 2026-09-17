@@ -33,7 +33,7 @@ const PAGE = 500;
 export const SYNC_TABLES: readonly TableSpec[] = [
   {
     name: 'meals',
-    columns: ['id', 'date', 'meal_type', 'time', 'text', 'created_at', 'updated_at', 'deleted_at'],
+    columns: ['id', 'date', 'meal_type', 'time', 'text', 'calories', 'created_at', 'updated_at', 'deleted_at'],
   },
   {
     name: 'weights',

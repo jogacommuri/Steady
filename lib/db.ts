@@ -10,7 +10,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DATABASE_NAME = 'steady.db';
 
-const TARGET_USER_VERSION = 4;
+const TARGET_USER_VERSION = 5;
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA journal_mode = WAL;');
@@ -111,6 +111,28 @@ export async function migrate(db: SQLiteDatabase): Promise<void> {
       `ALTER TABLE goals ADD COLUMN weight_unit TEXT NOT NULL DEFAULT 'kg';`
     );
     version = 4;
+  }
+
+  if (version < 5) {
+    // Calorie estimation. `calories` is nullable — NULL means "not estimated
+    // yet", not zero, so averages can exclude it rather than treating it as a
+    // real 0. It's a normal synced column (unlike `goals`), so a manual or
+    // background-filled value backs up and shows up on other devices too.
+    // `calorie_cache` avoids re-querying the nutrition API for repeat meal
+    // text (e.g. "coffee" logged daily) — local-only, never synced.
+    // `auto_calories` (on the device-local `goals` row) is the opt-in toggle.
+    await db.execAsync(`
+      ALTER TABLE meals ADD COLUMN calories REAL;
+
+      CREATE TABLE IF NOT EXISTS calorie_cache (
+        text_key   TEXT PRIMARY KEY NOT NULL,
+        calories   REAL NOT NULL,
+        cached_at  TEXT NOT NULL
+      );
+
+      ALTER TABLE goals ADD COLUMN auto_calories INTEGER NOT NULL DEFAULT 0;
+    `);
+    version = 5;
   }
 
   // Future migrations append here, bumping `version` each step.

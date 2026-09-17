@@ -14,6 +14,8 @@ export interface Meal {
   mealType: MealType;
   time: string; // HH:MM
   text: string;
+  /** Null = not estimated (yet) — never treat as 0 in an average. */
+  calories: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -72,4 +74,6 @@ export interface Goals {
   minutesPerWeek: number;
   mealsPerDay: number;
   weightUnit: WeightUnit;
+  /** Opt-in: estimate a meal's calories via the nutrition API when none was entered manually. */
+  autoCalories: boolean;
 }

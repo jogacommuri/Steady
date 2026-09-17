@@ -10,6 +10,7 @@ interface GoalsRow {
   minutes_per_week: number;
   meals_per_day: number;
   weight_unit: WeightUnit;
+  auto_calories: number;
 }
 
 const DEFAULT_GOALS: Goals = {
@@ -18,6 +19,7 @@ const DEFAULT_GOALS: Goals = {
   minutesPerWeek: 150,
   mealsPerDay: 3,
   weightUnit: 'kg',
+  autoCalories: false,
 };
 
 const toGoals = (r: GoalsRow): Goals => ({
@@ -26,6 +28,7 @@ const toGoals = (r: GoalsRow): Goals => ({
   minutesPerWeek: r.minutes_per_week,
   mealsPerDay: r.meals_per_day,
   weightUnit: r.weight_unit === 'lb' ? 'lb' : 'kg',
+  autoCalories: !!r.auto_calories,
 });
 
 /** Device-local targets + display preferences — see the `goals` migration in `lib/db.ts`. */
@@ -36,7 +39,7 @@ export function useGoals() {
 
   const refresh = useCallback(async () => {
     const row = await db.getFirstAsync<GoalsRow>(
-      'SELECT target_weight, workouts_per_week, minutes_per_week, meals_per_day, weight_unit FROM goals WHERE id = ?',
+      'SELECT target_weight, workouts_per_week, minutes_per_week, meals_per_day, weight_unit, auto_calories FROM goals WHERE id = ?',
       ['local']
     );
     if (row) setGoals(toGoals(row));
@@ -51,9 +54,17 @@ export function useGoals() {
     async (next: Goals) => {
       await db.runAsync(
         `UPDATE goals
-         SET target_weight = ?, workouts_per_week = ?, minutes_per_week = ?, meals_per_day = ?, weight_unit = ?, updated_at = ?
+         SET target_weight = ?, workouts_per_week = ?, minutes_per_week = ?, meals_per_day = ?, weight_unit = ?, auto_calories = ?, updated_at = ?
          WHERE id = 'local'`,
-        [next.targetWeight, next.workoutsPerWeek, next.minutesPerWeek, next.mealsPerDay, next.weightUnit, nowIso()]
+        [
+          next.targetWeight,
+          next.workoutsPerWeek,
+          next.minutesPerWeek,
+          next.mealsPerDay,
+          next.weightUnit,
+          next.autoCalories ? 1 : 0,
+          nowIso(),
+        ]
       );
       setGoals(next);
     },

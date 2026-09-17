@@ -6,7 +6,7 @@
  */
 
 import { addDays, formatDay } from './dates';
-import type { Meal, Weight, WeightUnit, Workout } from './types';
+import { MEAL_TYPES, type Meal, type MealType, type Weight, type WeightUnit, type Workout } from './types';
 import { formatWeight } from './units';
 
 const DAY_MS = 86_400_000;
@@ -181,4 +181,45 @@ export function dayFullness(
   if (mealCount >= 2 && other) return 'full';
   if (hasDay(date, meals, weights, workouts)) return 'partial';
   return 'none';
+}
+
+/** A day's total calories from meals that have an estimate; `hasData` is false if none of that day's meals do. */
+export function dailyCalorieTotals(
+  meals: readonly Meal[],
+  days: readonly string[]
+): { date: string; total: number; hasData: boolean }[] {
+  return days.map((date) => {
+    const known = meals.filter((m) => m.date === date && m.calories != null);
+    return {
+      date,
+      total: known.reduce((sum, m) => sum + (m.calories ?? 0), 0),
+      hasData: known.length > 0,
+    };
+  });
+}
+
+/**
+ * Average daily calorie total across `days`, counting only days that have at
+ * least one meal with a known calorie value — a day with zero logged/known
+ * calories is "no data", not "0 kcal", so it doesn't drag the average down.
+ * `null` if nothing in the window has an estimate yet.
+ */
+export function averageDailyCalories(meals: readonly Meal[], days: readonly string[]): number | null {
+  const known = dailyCalorieTotals(meals, days).filter((d) => d.hasData);
+  if (known.length === 0) return null;
+  return Math.round(known.reduce((sum, d) => sum + d.total, 0) / known.length);
+}
+
+/** Average calories per entry, broken down by meal type, over `days`. `null` per type with no estimates yet. */
+export function averageCaloriesByMealType(
+  meals: readonly Meal[],
+  days: readonly string[]
+): Record<MealType, number | null> {
+  const daySet = new Set(days);
+  const result = {} as Record<MealType, number | null>;
+  for (const type of MEAL_TYPES) {
+    const known = meals.filter((m) => m.mealType === type && m.calories != null && daySet.has(m.date));
+    result[type] = known.length ? Math.round(known.reduce((sum, m) => sum + (m.calories ?? 0), 0) / known.length) : null;
+  }
+  return result;
 }

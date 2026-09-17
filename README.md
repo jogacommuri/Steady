@@ -28,6 +28,16 @@ The full plan lives in [`docs/architecture.md`](docs/architecture.md).
   (`app/add.tsx`), opened from the tab bar's "+" or Today's quick-add row.
   **Known trim:** Goals are device-local only (no Supabase table yet) —
   unlike meals/weights/workouts they don't sync across devices.
+- ✅ **Phase 5 — Calorie estimation (opt-in):** meals carry an optional
+  `calories` field. Type one in yourself, or turn on "Estimate calories
+  automatically" on the Goals screen to have it filled in the background via
+  [API Ninjas' Nutrition API](https://api-ninjas.com/api/nutrition) whenever
+  an entry has none — never blocks the save, and a local cache
+  (`calorie_cache`) avoids repeat lookups for the same text. Off by default;
+  needs `EXPO_PUBLIC_NUTRITION_API_KEY` set to turn on. The Meals tab shows a
+  daily-average headline plus a per-meal-type breakdown, both excluding
+  entries with no known calories rather than treating them as 0. See
+  `lib/nutrition.ts`, `lib/calorieEnrichment.ts`.
 
 ## Getting started
 

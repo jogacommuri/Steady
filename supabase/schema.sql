@@ -31,12 +31,17 @@ create table if not exists public.meals (
   meal_type  text not null,
   time       text not null,
   text       text not null default '',
+  calories   double precision, -- null = not estimated; manual entry or the opt-in nutrition-API lookup
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   deleted_at timestamptz
 );
 create index if not exists idx_meals_user_updated
   on public.meals (user_id, updated_at);
+
+-- Upgrading a project that already ran this file before `calories` existed?
+-- Run just this line once:
+--   alter table public.meals add column if not exists calories double precision;
 
 -- ---------------------------------------------------------------------------
 -- weights
