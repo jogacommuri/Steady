@@ -53,7 +53,13 @@ export default function MealsScreen() {
       if (last && last.date === m.date) last.items.push(m);
       else out.push({ date: m.date, label, items: [m] });
     }
-    return out;
+    return out.map((g) => {
+      const known = g.items.filter((m) => m.calories != null);
+      const dayCalories = known.length
+        ? known.reduce((sum, m) => sum + (m.calories ?? 0), 0)
+        : null;
+      return { ...g, dayCalories };
+    });
   }, [meals, filter, todayStr]);
 
   const { avgDaily, byType } = useMemo(() => {
@@ -129,6 +135,9 @@ export default function MealsScreen() {
             <View key={g.date}>
               <View style={styles.groupHeader}>
                 <Text style={[weight('semibold'), styles.groupLabel]}>{g.label}</Text>
+                {g.dayCalories != null ? (
+                  <Text style={[weight('semibold'), styles.groupCalories]}>{g.dayCalories} kcal</Text>
+                ) : null}
               </View>
               <RuleLight />
               <View style={styles.list}>
@@ -149,8 +158,16 @@ const styles = StyleSheet.create({
   titleBlock: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md },
   title: { fontSize: 32, letterSpacing: -0.9, textTransform: 'uppercase', color: theme.colors.text },
   subtitle: { fontSize: 12, color: theme.colors.textMuted, marginTop: spacing.xs },
-  groupHeader: { backgroundColor: theme.colors.surface, paddingHorizontal: spacing.lg, paddingVertical: 12 },
+  groupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
+  },
   groupLabel: { fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: theme.colors.textMuted },
+  groupCalories: { fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase', color: theme.colors.textFaint },
   list: { paddingHorizontal: spacing.lg },
   backfillSection: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg },
   backfillCopy: { fontSize: 12, lineHeight: 17, color: theme.colors.textMuted },
