@@ -46,6 +46,16 @@ The full plan lives in [`docs/architecture.md`](docs/architecture.md).
   **Also tried and rejected:** API Ninjas' free tier gates the `calories`
   field itself behind a paid plan; a structured food-database API
   (calorieapi.com) needs precise gram quantities the app never collects.
+- ✅ **Phase 6 — Meal photo ID (opt-in):** on the meal entry form, "Camera" /
+  "Photo library" buttons send a resized/compressed photo (client-side via
+  `expo-image-manipulator`) to a second Edge Function
+  (`supabase/functions/identify-meal-photo`), which proxies the same way to
+  OpenAI's vision input and returns a short description + calorie estimate
+  that fill the meal text and calories fields. Same opt-in model as calorie
+  estimation — per-tap here rather than a background toggle — and the same
+  `OPENAI_API_KEY` secret, no new key to configure. See
+  [Supabase setup, step 6](docs/supabase-setup.md), `lib/mealPhoto.ts`,
+  `supabase/functions/identify-meal-photo/index.ts`.
 
 ## Getting started
 

@@ -84,10 +84,18 @@ npm start
 The app signs in anonymously and starts syncing automatically. Add a meal on one
 device, and it should appear in the Supabase **Table Editor → meals**.
 
-## 6. (Optional) Calorie estimation via OpenAI
+## 6. (Optional) Calorie estimation + photo meal ID via OpenAI
 
-Powers the "Estimate calories automatically" toggle on the Goals screen. Needs
-the [Supabase CLI](https://supabase.com/docs/guides/cli) installed and an
+Two Edge Functions share one OpenAI setup:
+
+- `estimate-calories` — powers the "Estimate calories automatically" toggle on
+  the Goals screen (free-text meal description → calories).
+- `identify-meal-photo` — powers the Camera / Photo library buttons on the
+  meal entry form (a photo → meal description + calories). Uses OpenAI's
+  vision input, so it needs a vision-capable model (the default, `gpt-4o-mini`,
+  already is).
+
+Needs the [Supabase CLI](https://supabase.com/docs/guides/cli) installed and an
 [OpenAI API key](https://platform.openai.com/api-keys). The key is a
 **Supabase secret**, not an app env var — it never ships in the app bundle.
 
@@ -96,20 +104,22 @@ supabase login
 supabase link --project-ref YOUR-PROJECT-REF   # the ref is in your project URL
 supabase secrets set OPENAI_API_KEY=sk-...
 supabase functions deploy estimate-calories
+supabase functions deploy identify-meal-photo
 ```
 
-Defaults to `gpt-4o-mini`. If that model name has moved on by the time you're
-reading this, set an override — no code change needed:
+Both default to `gpt-4o-mini`. If that model name has moved on by the time
+you're reading this, set an override — no code change needed (applies to both
+functions, since they share the secret):
 
 ```bash
 supabase secrets set OPENAI_MODEL=whatever-model-you-want
 ```
 
-That's it — no client-side config. The Goals toggle checks that Supabase itself
-is configured (same `.env` values as above); it doesn't know whether the
-function is actually deployed, so a misconfigured deploy or a bad model name
-shows up as a specific error in the Meals tab's "Estimate now" toast rather
-than the toggle staying greyed out.
+That's it — no client-side config. The Goals toggle and the photo buttons both
+just check that Supabase itself is configured (same `.env` values as above);
+neither knows whether its function is actually deployed, so a misconfigured
+deploy or a bad model name shows up as a specific error in a toast rather than
+the feature staying hidden.
 
 ---
 

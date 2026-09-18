@@ -19,7 +19,14 @@
       "output": "static"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Steady uses your photos to identify a meal and estimate its calories.",
+          "cameraPermission": "Steady uses the camera to photograph a meal and estimate its calories."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
