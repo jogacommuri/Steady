@@ -37,6 +37,15 @@ const SYSTEM_PROMPT =
   'photo does not plausibly show food, {"text": null, "calories": null, ' +
   '"reason": "<short reason>"}.';
 
+/** Same defensive extraction as lib/errors.ts on the client — not every rejection is an Error instance. */
+function errorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === 'object' && typeof (e as { message?: unknown }).message === 'string') {
+    return (e as { message: string }).message;
+  }
+  return String(e);
+}
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -117,7 +126,7 @@ Deno.serve(async (req: Request) => {
       reason: text == null ? parsed.reason ?? 'no food recognized in photo' : undefined,
     });
   } catch (e) {
-    const reason = e instanceof Error ? e.message : String(e);
+    const reason = errorMessage(e);
     return json({ text: null, calories: null, reason: `OpenAI request failed: ${reason}` });
   }
 });

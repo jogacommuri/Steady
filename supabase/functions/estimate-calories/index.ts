@@ -30,6 +30,15 @@ const SYSTEM_PROMPT =
   'a typical single serving, or {"calories": null, "reason": "<short reason>"} ' +
   "if the text doesn't plausibly describe food at all.";
 
+/** Same defensive extraction as lib/errors.ts on the client — not every rejection is an Error instance. */
+function errorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === 'object' && typeof (e as { message?: unknown }).message === 'string') {
+    return (e as { message: string }).message;
+  }
+  return String(e);
+}
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -98,7 +107,7 @@ Deno.serve(async (req: Request) => {
       reason: calories == null ? parsed.reason ?? 'model returned no estimate' : undefined,
     });
   } catch (e) {
-    const reason = e instanceof Error ? e.message : String(e);
+    const reason = errorMessage(e);
     return json({ calories: null, reason: `OpenAI request failed: ${reason}` });
   }
 });

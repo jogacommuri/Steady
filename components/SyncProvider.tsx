@@ -13,6 +13,7 @@ import {
 import { AppState } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 
+import { errorMessage } from '@/lib/errors';
 import { SyncEngine } from '@/lib/sync';
 import { syncBus } from '@/lib/syncBus';
 import {
@@ -93,7 +94,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.warn('[sync] push/pull failed:', e);
       setStatus('error');
-      setLastError(e instanceof Error ? e.message : String(e));
+      setLastError(errorMessage(e));
     } finally {
       running.current = false;
       if (pending.current) {
@@ -130,7 +131,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
           console.warn('[sync] re-establishing session failed:', e);
           if (!cancelled) {
             setStatus('error');
-            setLastError(e instanceof Error ? e.message : String(e));
+            setLastError(errorMessage(e));
           }
         }
         return;
@@ -167,7 +168,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         console.warn('[sync] initial sign-in failed:', e);
         if (!cancelled) {
           setStatus('error');
-          setLastError(e instanceof Error ? e.message : String(e));
+          setLastError(errorMessage(e));
           setAccount((a) => ({ ...a, loading: false }));
         }
       }

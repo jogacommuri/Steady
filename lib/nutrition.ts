@@ -14,6 +14,7 @@
  * without console access.
  */
 
+import { errorMessage } from './errors';
 import { isSupabaseConfigured, supabase } from './supabase';
 
 export const isNutritionApiConfigured = isSupabaseConfigured;
@@ -52,7 +53,7 @@ export async function estimateCalories(text: string): Promise<CalorieEstimate> {
     console.info(`[nutrition] estimated "${query}": ${calories} kcal`);
     return { calories };
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
+    const message = errorMessage(e);
     console.warn('[nutrition] request failed:', message);
     return { calories: null, reason: `network error: ${message}` };
   }

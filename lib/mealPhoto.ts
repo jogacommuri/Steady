@@ -12,6 +12,7 @@
  * toast without console access, same pattern as lib/nutrition.ts.
  */
 
+import { errorMessage } from './errors';
 import { isSupabaseConfigured, supabase } from './supabase';
 
 export const isMealPhotoApiConfigured = isSupabaseConfigured;
@@ -52,7 +53,7 @@ export async function identifyMealPhoto(base64: string, mimeType = 'image/jpeg')
     console.info(`[mealPhoto] identified "${text}": ${calories ?? 'no'} kcal`);
     return { text, calories };
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
+    const message = errorMessage(e);
     console.warn('[mealPhoto] request failed:', message);
     return { text: null, calories: null, reason: `network error: ${message}` };
   }
