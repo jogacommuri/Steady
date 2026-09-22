@@ -7,6 +7,12 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Native projects — regenerated from app.json + plugins via `expo prebuild`
+# (Continuous Native Generation). Don't commit these; run prebuild again
+# whenever you need them. See docs/build-ios-local.md.
+/ios/
+/android/
+
 # Native
 *.orig.*
 *.jks

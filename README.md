@@ -78,6 +78,18 @@ Built on **Expo SDK 57** (React Native 0.86). Requires
 | `npm run ios` / `npm run android` / `npm run web` | Launch a platform target |
 | `npm run typecheck` | `tsc --noEmit` type check |
 | `npm run lint` | Expo lint |
+| `npm run prebuild:ios` | Generate the native `ios/` project (for a standalone build — see below) |
+
+### Running as a standalone app (no dev server needed)
+
+`npm start` + Expo Go is for development only — close the dev server and the
+app stops working. To install a real, standalone build on your iPhone that
+runs on its own (and unlocks native modules Expo Go can't host), see
+[docs/build-ios-local.md](docs/build-ios-local.md) — a free path using your
+own Apple ID and a local Xcode build (installs directly via cable; Apple's
+free signing needs renewing roughly weekly). EAS Build is the paid
+alternative ($99/yr Apple Developer Program) for wireless installs and no
+renewal step — not set up in this repo yet.
 
 ## Project layout
 

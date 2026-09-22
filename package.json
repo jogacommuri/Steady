@@ -8,7 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prebuild:ios": "expo prebuild --platform ios"
   },
   "dependencies": {
     "@expo-google-fonts/archivo": "^0.4.2",
