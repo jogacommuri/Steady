@@ -79,17 +79,23 @@ Built on **Expo SDK 57** (React Native 0.86). Requires
 | `npm run typecheck` | `tsc --noEmit` type check |
 | `npm run lint` | Expo lint |
 | `npm run prebuild:ios` | Generate the native `ios/` project (for a standalone build — see below) |
+| `npm run build:web` | Export a static web build to `dist/` (for hosting — see below) |
 
 ### Running as a standalone app (no dev server needed)
 
 `npm start` + Expo Go is for development only — close the dev server and the
-app stops working. To install a real, standalone build on your iPhone that
-runs on its own (and unlocks native modules Expo Go can't host), see
-[docs/build-ios-local.md](docs/build-ios-local.md) — a free path using your
-own Apple ID and a local Xcode build (installs directly via cable; Apple's
-free signing needs renewing roughly weekly). EAS Build is the paid
-alternative ($99/yr Apple Developer Program) for wireless installs and no
-renewal step — not set up in this repo yet.
+app stops working. Two ways to get something that stays up on its own:
+
+- **iOS (your iPhone):** [docs/build-ios-local.md](docs/build-ios-local.md) —
+  a free path using your own Apple ID and a local Xcode build (installs
+  directly via cable; Apple's free signing needs renewing roughly weekly).
+  EAS Build is the paid alternative ($99/yr Apple Developer Program) for
+  wireless installs and no renewal step — not set up in this repo yet.
+- **Web (any browser):** [docs/build-web.md](docs/build-web.md) — a static
+  site (`npm run build:web`) hosted on Vercel/Netlify/Cloudflare Pages
+  (`vercel.json` is already in the repo). No Apple ID, no re-signing, works
+  from any device with a browser. `metro.config.js` carries a one-line fix
+  needed for `expo-sqlite`'s web backend to bundle correctly.
 
 ## Project layout
 
